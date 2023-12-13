@@ -1,6 +1,8 @@
 */build
 test
+.vscode
 */scanner.c
 */scanner.h
 */parser.c
 */parser.h
+*/*.elf

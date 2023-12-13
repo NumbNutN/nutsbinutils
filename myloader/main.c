@@ -70,6 +70,8 @@ void my_execve(const char* file,char* argv[],char *envp[]){
         }
     }
     close(fd);
+
+    //
 }
 
 int main(){
