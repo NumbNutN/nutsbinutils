@@ -7,6 +7,8 @@
 #include <elf.h>
 //mmap
 #include <sys/mman.h>
+//perror
+#include <stdio.h>
 
 //to align an address to the specified alignment requirement
 #define ROUND(x,align) ((uintptr_t)x & ~((1<<align)-1))
@@ -43,7 +45,8 @@ void my_execve(const char* file,char* argv[],char *envp[]){
             //memory map size
             int map_sz = p->p_filesz + MOD(p->p_vaddr,p->p_align);
             map_sz = MOD(map_sz,p->p_align)?(ROUND(map_sz,p->p_align)+(1<<p->p_align)):map_sz;
-
+	    
+	    int offset = ROUND(p->p_offset,p->p_align);
             //map file content to memory
             void* ret = mmap(
                 (void*)map_beg,
@@ -51,8 +54,9 @@ void my_execve(const char* file,char* argv[],char *envp[]){
                 prot,
                 MAP_PRIVATE|MAP_FIXED,
                 fd,
-                ROUND(p->p_offset,p->p_align)
+                offset
             );
+	    perror("");
             assert(ret != MAP_FAILED);
 
             //map extra anonymous memory
@@ -71,11 +75,12 @@ void my_execve(const char* file,char* argv[],char *envp[]){
     }
     close(fd);
 
-    //
+    //now just cast the entry point address to a function pointer and call it
+    void (*entry_)() = (void(*)())h->e_entry;
+    entry_();
 }
 
-int main(){
-    char* argv[] = {"/bin/ls","/home",NULL};
-    char* envp[] = {NULL};
-    my_execve("/bin/ls", argv, envp);
+int main(int argc,char* argv[],char* envp[]){
+    
+    my_execve(argv[1], argv + 1, envp);
 }
