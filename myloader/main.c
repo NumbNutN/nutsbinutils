@@ -10,10 +10,7 @@
 //perror
 #include <stdio.h>
 
-//to align an address to the specified alignment requirement
-#define ROUND(x,align) ((uintptr_t)x & ~((1<<align)-1))
-#define MOD(x,align) ((uintptr_t)x % (1<<align))
-// ROUND(x,align)   EQU    x - MOD(x,p->p_align)
+#include "utils.h"
 
 void my_execve(const char* file,char* argv[],char *envp[]){
    
@@ -46,7 +43,7 @@ void my_execve(const char* file,char* argv[],char *envp[]){
             int map_sz = p->p_filesz + MOD(p->p_vaddr,p->p_align);
             map_sz = MOD(map_sz,p->p_align)?(ROUND(map_sz,p->p_align)+(1<<p->p_align)):map_sz;
 	    
-	    int offset = ROUND(p->p_offset,p->p_align);
+            int offset = ROUND(p->p_offset,p->p_align);
             //map file content to memory
             void* ret = mmap(
                 (void*)map_beg,
@@ -56,7 +53,6 @@ void my_execve(const char* file,char* argv[],char *envp[]){
                 fd,
                 offset
             );
-	    perror("");
             assert(ret != MAP_FAILED);
 
             //map extra anonymous memory
