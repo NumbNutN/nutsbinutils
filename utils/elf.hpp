@@ -34,7 +34,7 @@ public:
 
     }
 
-    void add_section(void* dat,uint32_t addr,uint32_t size){
+    void add_section(char* dat,uint32_t addr,uint32_t size){
         uint32_t offset = new_sechdroff();
         shdr.insert(dat,addr,offset,size);
     }

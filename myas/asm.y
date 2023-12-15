@@ -95,7 +95,9 @@ TEXT
     : INSTRUCTION_SET                           {
         //instruction set over
         //create a section object
-        elfobj.add_section();
+        char* buf = new char(4096);
+        uint32_t size = $$.content(buf);
+        elfobj.add_section(buf,0x0,size);
     }
 
 INSTRUCTION_SET

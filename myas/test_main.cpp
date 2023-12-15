@@ -56,5 +56,8 @@ int main(int argc,char** argv)
 
     yyparse();
 
+    //write elf file
+    output << elfobj;
+
 	return 0;
 }

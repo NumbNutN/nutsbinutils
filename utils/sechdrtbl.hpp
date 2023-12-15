@@ -24,7 +24,7 @@ public:
 
     shdrtbl(Elf32_Ehdr& ehdr):_ehdr(ehdr){}
 
-    void insert(void* dat,uint32_t addr,uint32_t offset,uint32_t size){
+    void insert(char* dat,uint32_t addr,uint32_t offset,uint32_t size){
         
         Elf32_Shdr sechdr = {
             .sh_type = SHT_PROGBITS,
@@ -36,7 +36,7 @@ public:
 
         sectionUnitList.push_back({
             sechdr,
-            dat
+            (std::unique_ptr<char>)dat
         });
         _ehdr.e_shnum++;
     }
@@ -47,14 +47,19 @@ public:
 
 std::ostream &operator<<(std::ostream& out,const shdrtbl& stbl){
 
-    for(auto unit :stbl.sectionUnitList){
+    //get the last section offset
+    uint32_t shdr_off = stbl.sectionUnitList.back().shdr.sh_offset + 4096;
+    stbl._ehdr.e_shoff = shdr_off;
+
+    for(const shdrtbl::unit& obj :stbl.sectionUnitList){
         //write section header table
         out.seekp(stbl._ehdr.e_shoff, std::ios::beg);
-        out.write(reinterpret_cast<const char*>(&unit.shdr), sizeof(Elf32_Shdr));
+        out.write(reinterpret_cast<const char*>(&obj.shdr), sizeof(Elf32_Shdr));
 
         //write each section
-        out.seekp(unit.shdr.sh_offset, std::ios::beg);
-        out.write((const char*)unit.dat, unit.shdr.sh_size);
+        out.seekp(obj.shdr.sh_offset, std::ios::beg);
+        const char* buf = obj.dat;
+        out.write(obj.dat, obj.shdr.sh_size);
     }
     
 }
