@@ -71,7 +71,8 @@ BIN = $(CP) -O binary -S
 #######################################
 
 AS_INCLUDES = 
-C_INCLUDES = 
+C_INCLUDES = \
+-I../utils
 
 # macros for gcc
 # AS defines

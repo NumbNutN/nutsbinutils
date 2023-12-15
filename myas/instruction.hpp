@@ -73,7 +73,7 @@ public:
         Instruction(mnemonic,rd,rn,none_offset){}
 
 
-    uint32_t encode(){
+    uint32_t encode() const {
         return code;
     }
     /**

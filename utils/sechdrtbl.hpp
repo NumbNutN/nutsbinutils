@@ -1,11 +1,10 @@
 #include <elf.h>
 
-#include "elf.hpp"
-
 #include <unistd.h>
 
 #include <fstream>
 #include <vector>
+#include <memory>
 
 class shdrtbl{
 
@@ -13,14 +12,13 @@ private:
 
     struct unit{
         Elf32_Shdr shdr;
-        void* dat;
+        std::unique_ptr<char> dat;
     };
 
     Elf32_Ehdr& _ehdr;
 
     //section header table
     std::vector<unit> sectionUnitList;
-
 
 public:
 
@@ -40,7 +38,6 @@ public:
             sechdr,
             dat
         });
-
         _ehdr.e_shnum++;
     }
 
@@ -57,7 +54,7 @@ std::ostream &operator<<(std::ostream& out,const shdrtbl& stbl){
 
         //write each section
         out.seekp(unit.shdr.sh_offset, std::ios::beg);
-        out.write((const void*)unit.dat, unit.shdr.sh_size);
+        out.write((const char*)unit.dat, unit.shdr.sh_size);
     }
     
 }

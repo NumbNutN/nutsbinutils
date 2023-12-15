@@ -20,17 +20,23 @@ public:
         return _off_cnt;
     }
 
-    elf() : 
+    elf(uint16_t etype) : 
         //initialize elf header
         ehdr({
-            .e_type = ET_EXEC,
+            .e_type = etype,
             .e_machine = EM_ARM,
-            .e_shoff = new_sechdroff(),}),
+            .e_shoff = new_sechdroff(),
+            .e_shnum = 0,}),
         //initialize section header
-        shdr(shdrtbl(ehdr)){
+        shdr(shdrtbl(ehdr)) {
         
         memcpy(ehdr.e_ident,"ELF",3);
 
+    }
+
+    void add_section(void* dat,uint32_t addr,uint32_t size){
+        uint32_t offset = new_sechdroff();
+        shdr.insert(dat,addr,offset,size);
     }
 
     friend std::ostream &operator<<(std::ostream& output,const elf &elf_struct);

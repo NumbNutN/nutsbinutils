@@ -8,6 +8,8 @@
 #include "operand.hpp"
 #include "instruction.hpp"
 
+#include "sechdrtbl.hpp"
+
 #include <iostream>
 #include <bitset>
 
@@ -28,6 +30,8 @@ void yyerror(char *s, ...) // 变长参数错误处理函数
 
 extern "C" int yylex();
 
+extern elf elfobj;
+
 %}
 
 //yylval
@@ -44,6 +48,7 @@ extern "C" int yylex();
     uint32_t immd;             /* 立即数常量 */
 
     //非终结符
+    instructionSet* insSet; /* 指令集 */
     Instruction* ins;   /* 指令 */
     Mnemonic* mnemonic;  /* 指令助记符 */
     Operand<Rd>* rd;     /* 操作数 */
@@ -80,14 +85,36 @@ extern "C" int yylex();
 %type <off> OFFSET              /* offset */
 
 %type <ins> INSTRUCTION
+%type <insSet> INSTRUCTION_SET
 
 
 /* 文法规则 */
 %%
 
+TEXT
+    : INSTRUCTION_SET                           {
+        //instruction set over
+        //create a section object
+        elfobj.add_section();
+    }
+
 INSTRUCTION_SET
-    : INSTRUCTION_SET INSTRUCTION               {cout << bitset<32>($2->encode()) << endl;}
-    | INSTRUCTION                               {cout << bitset<32>($1->encode()) << endl;}
+    : INSTRUCTION_SET INSTRUCTION               {
+        //counter new instruction, insert
+        $1->insert($2->encode());
+        $$ = $1;
+
+        cout << bitset<32>($2->encode()) << endl;
+    }
+
+    | INSTRUCTION                               {
+        //first instruction counter
+        //create a instruction set object
+        $$ = new instructionSet();
+        $$->insert($1->encode());
+        
+        cout << bitset<32>($1->encode()) << endl;
+    }
 
 INSTRUCTION
     : MNEMONIC                                  {}
