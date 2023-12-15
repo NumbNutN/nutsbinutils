@@ -1,9 +1,11 @@
+#pragma once
+
 #include <vector>
 #include <sstream>
 
 #include "instruction.hpp"
 
-class instructionSet{
+class InstructionSet{
 
 private:
     //class for a set of instruction 
@@ -15,7 +17,7 @@ private:
     size_t _len = 0;
 
 public:
-    instructionSet() :ss(std::ios::in | std::ios::out | std::ios::binary) {}
+    InstructionSet() :ss(std::ios::in | std::ios::out | std::ios::binary) {}
     
     void insert(const Instruction& ins){
 

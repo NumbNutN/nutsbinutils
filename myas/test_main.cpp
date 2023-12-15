@@ -1,6 +1,7 @@
 #include "mnemonic.hpp"
 #include "operand.hpp"
 #include "instruction.hpp"
+#include "instructionSet.hpp"
 
 #include "scanner.h"
 #include "parser.h"

@@ -6,7 +6,9 @@
 %{
 #include "mnemonic.hpp"
 #include "operand.hpp"
+#include "instructionSet.hpp"
 #include "instruction.hpp"
+#include "elf.hpp"
 
 #include "sechdrtbl.hpp"
 
@@ -48,7 +50,7 @@ extern elf elfobj;
     uint32_t immd;             /* 立即数常量 */
 
     //非终结符
-    instructionSet* insSet; /* 指令集 */
+    InstructionSet* insSet; /* 指令集 */
     Instruction* ins;   /* 指令 */
     Mnemonic* mnemonic;  /* 指令助记符 */
     Operand<Rd>* rd;     /* 操作数 */
@@ -86,6 +88,7 @@ extern elf elfobj;
 
 %type <ins> INSTRUCTION
 %type <insSet> INSTRUCTION_SET
+%type <nullptr> TEXT
 
 
 /* 文法规则 */
@@ -96,14 +99,14 @@ TEXT
         //instruction set over
         //create a section object
         char* buf = new char(4096);
-        uint32_t size = $$.content(buf);
+        uint32_t size = $1->content(buf);
         elfobj.add_section(buf,0x0,size);
     }
 
 INSTRUCTION_SET
     : INSTRUCTION_SET INSTRUCTION               {
         //counter new instruction, insert
-        $1->insert($2->encode());
+        $1->insert(*$2);
         $$ = $1;
 
         cout << bitset<32>($2->encode()) << endl;
@@ -112,8 +115,8 @@ INSTRUCTION_SET
     | INSTRUCTION                               {
         //first instruction counter
         //create a instruction set object
-        $$ = new instructionSet();
-        $$->insert($1->encode());
+        $$ = new InstructionSet();
+        $$->insert(*$1);
         
         cout << bitset<32>($1->encode()) << endl;
     }

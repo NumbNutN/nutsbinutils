@@ -1,3 +1,5 @@
+#pragma once
+
 #include <elf.h>
 
 #include <unistd.h>
@@ -8,12 +10,13 @@
 
 class shdrtbl{
 
-private:
+public:
 
     struct unit{
         Elf32_Shdr shdr;
         std::unique_ptr<char> dat;
     };
+private:
 
     Elf32_Ehdr& _ehdr;
 
@@ -45,7 +48,7 @@ public:
     friend std::ostream &operator<<(std::ostream& out,const shdrtbl& stbl);
 };
 
-std::ostream &operator<<(std::ostream& out,const shdrtbl& stbl){
+inline std::ostream &operator<<(std::ostream& out,const shdrtbl& stbl){
 
     //get the last section offset
     uint32_t shdr_off = stbl.sectionUnitList.back().shdr.sh_offset + 4096;
@@ -58,8 +61,7 @@ std::ostream &operator<<(std::ostream& out,const shdrtbl& stbl){
 
         //write each section
         out.seekp(obj.shdr.sh_offset, std::ios::beg);
-        const char* buf = obj.dat;
-        out.write(obj.dat, obj.shdr.sh_size);
+        out.write(obj.dat.get(), obj.shdr.sh_size);
     }
     
 }

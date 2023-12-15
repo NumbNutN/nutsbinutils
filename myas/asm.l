@@ -2,6 +2,7 @@
 #include "mnemonic.hpp"
 #include "operand.hpp"
 #include "instruction.hpp"
+#include "instructionSet.hpp"
 #include "parser.h"
 
 #include <string.h>
