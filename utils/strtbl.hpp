@@ -11,13 +11,13 @@ protected:
 public:
 
     strtbl() : 
-        section("strtbl",SHT_STRTAB,0x0) {
+        section(".shstrtab",SHT_STRTAB,0x0) {
     }
 
     uint32_t insert(std::string name){
         size_t tmp = section::size();
         base << name;
-        section::size() += name.length();
+        section::size() += (name.length() + 1);
         return tmp;
     }
 

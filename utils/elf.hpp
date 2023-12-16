@@ -39,7 +39,10 @@ public:
         _ehdr({
             .e_type = etype,
             .e_machine = EM_ARM,
+            .e_entry = 0x0,
             .e_shoff = 0x200,
+            .e_ehsize = sizeof(Elf32_Ehdr),
+            .e_shentsize = sizeof(Elf32_Shdr),
             .e_shnum = 0,
             .e_shstrndx = 0})
     {
@@ -53,10 +56,10 @@ public:
 
         //insert a section string table
         shstrtbl.setOffset(poff + 0x100);
-        //push section string table section to section table
-        insert(shstrtbl);
         //the section string table idx
         _ehdr.e_shstrndx = _ehdr.e_shnum;
+        //push section string table section to section table
+        insert(shstrtbl);
 
         //arange for section header table
         _ehdr.e_shoff += poff;
@@ -87,11 +90,11 @@ inline std::ostream &operator<<(std::ostream& output,const elf &elf_struct){
     output.write(reinterpret_cast<const char*>(&elf_struct._ehdr), sizeof(Elf32_Ehdr));
 
     //write section header table & sections
-    for(const section& sec:elf_struct.sectionUnitList){
-        //write section header table
-        output.seekp(elf_struct._ehdr.e_shoff, std::ios::beg);
+    //write section header table
+    output.seekp(elf_struct._ehdr.e_shoff, std::ios::beg);
+    for(const section& sec:elf_struct.sectionUnitList)
         output.write(reinterpret_cast<const char*>(&sec.getSectionHeader()), sizeof(Elf32_Shdr));
-
+    for(const section& sec:elf_struct.sectionUnitList){
         //write each section
         output.seekp(sec.getSectionHeader().sh_offset,std::ios::beg);
         output << sec;
