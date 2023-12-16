@@ -58,6 +58,9 @@ int main(int argc,char** argv)
 
     yyparse();
 
+    //rearange the section 
+    elfobj.arange();
+    
     //write elf file
     output << elfobj;
 

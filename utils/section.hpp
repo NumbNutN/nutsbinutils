@@ -46,6 +46,10 @@ public:
         return _name;
     }
 
+    uint32_t getSize() const{
+        return _sechdr.sh_size;
+    }
+
     void setNameIdx(uint32_t idx){
         _sechdr.sh_name = idx;
     }
@@ -82,4 +86,6 @@ template<>
 inline section& operator<<(section& sec,std::string dat){
     std::ostream out(&sec._buf);
     out << dat;
+    char c = '\0';
+    out.write(&c,sizeof(char));
 }

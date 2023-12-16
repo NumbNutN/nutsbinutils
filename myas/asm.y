@@ -9,9 +9,6 @@
 #include "instructionSet.hpp"
 #include "instruction.hpp"
 #include "elf.hpp"
-
-#include "sechdrtbl.hpp"
-
 #include "binbuf.hpp"
 
 #include <iostream>
@@ -100,7 +97,7 @@ TEXT
     : INSTRUCTION_SET                           {
         //instruction set over
         //add the section
-        elfobj.add_section(*$1);
+        elfobj.insert(*$1);
     }
 
 INSTRUCTION_SET
