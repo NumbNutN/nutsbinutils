@@ -2,7 +2,9 @@
 
 #include <vector>
 #include <sstream>
+#include <iostream>
 
+#include "binbuf.hpp"
 #include "instruction.hpp"
 
 class InstructionSet{
@@ -12,30 +14,28 @@ private:
     std::vector<Instruction> set;
 
     //string buffer
-    std::stringstream ss;
+    binbuf buf;
     //section length
     size_t _len = 0;
 
 public:
-    InstructionSet() :ss(std::ios::in | std::ios::out | std::ios::binary) {}
+    InstructionSet() {}
     
     void insert(const Instruction& ins){
 
+        std::ostream out(&buf);
         //add the instruction to the list
         set.push_back(ins);
 
         //write the encode to buffer
         uint32_t code = ins.encode();
-        ss.write((char*)&code,sizeof(uint32_t));
+        out.write((char*)&code,sizeof(uint32_t));
         _len += sizeof(uint32_t);
     }
 
     //return the machine code memory space address
-    uint32_t content(char* buf){
-        uint32_t tmp = _len;
-        ss.read(buf, _len);
-        _len = 0;
-        return tmp;
+    const binbuf& content() const {
+        return buf;
     }
     
 };

@@ -12,6 +12,8 @@
 
 #include "sechdrtbl.hpp"
 
+#include "binbuf.hpp"
+
 #include <iostream>
 #include <bitset>
 
@@ -98,9 +100,8 @@ TEXT
     : INSTRUCTION_SET                           {
         //instruction set over
         //create a section object
-        char* buf = new char(4096);
-        uint32_t size = $1->content(buf);
-        elfobj.add_section(buf,0x0,size);
+        binbuf buf= $1->content();
+        elfobj.add_section(buf,0x0);
     }
 
 INSTRUCTION_SET

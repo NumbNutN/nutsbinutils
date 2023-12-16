@@ -5,8 +5,11 @@
 #include <unistd.h>
 
 #include <fstream>
+#include <iostream>
 #include <vector>
 #include <memory>
+
+#include "binbuf.hpp"
 
 class shdrtbl{
 
@@ -14,7 +17,7 @@ public:
 
     struct unit{
         Elf32_Shdr shdr;
-        std::unique_ptr<char> dat;
+        binbuf dat;
     };
 private:
 
@@ -27,20 +30,21 @@ public:
 
     shdrtbl(Elf32_Ehdr& ehdr):_ehdr(ehdr){}
 
-    void insert(char* dat,uint32_t addr,uint32_t offset,uint32_t size){
+    void insert(const binbuf& buf,uint32_t addr,uint32_t offset){
         
         Elf32_Shdr sechdr = {
             .sh_type = SHT_PROGBITS,
             .sh_flags = SHF_WRITE | SHF_ALLOC | SHF_EXECINSTR,
             .sh_addr = addr,
             .sh_offset = offset,
-            .sh_size = size
+            .sh_size = (uint32_t)buf.length()
         };
 
         sectionUnitList.push_back({
             sechdr,
-            (std::unique_ptr<char>)dat
+            buf
         });
+        
         _ehdr.e_shnum++;
     }
 
@@ -60,8 +64,12 @@ inline std::ostream &operator<<(std::ostream& out,const shdrtbl& stbl){
         out.write(reinterpret_cast<const char*>(&obj.shdr), sizeof(Elf32_Shdr));
 
         //write each section
+        char c;
+        std::istream in((std::streambuf*)&obj.dat);
         out.seekp(obj.shdr.sh_offset, std::ios::beg);
-        out.write(obj.dat.get(), obj.shdr.sh_size);
+        while(in.get(c)){
+            out.write(&c, 1);
+        }
     }
     
 }

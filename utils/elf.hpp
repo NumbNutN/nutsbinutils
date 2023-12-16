@@ -1,6 +1,8 @@
 #include <elf.h>
 
 #include "sechdrtbl.hpp"
+#include "binbuf.hpp"
+
 #include "memory.h"
 
 #include <string>
@@ -27,6 +29,7 @@ public:
             .e_machine = EM_ARM,
             .e_shoff = new_sechdroff(),
             .e_shnum = 0,}),
+
         //initialize section header
         shdr(shdrtbl(ehdr)) {
         
@@ -34,9 +37,9 @@ public:
 
     }
 
-    void add_section(char* dat,uint32_t addr,uint32_t size){
+    void add_section(const binbuf& buf,size_t addr){
         uint32_t offset = new_sechdroff();
-        shdr.insert(dat,addr,offset,size);
+        shdr.insert(buf,addr,offset);
     }
 
     friend std::ostream &operator<<(std::ostream& output,const elf &elf_struct);
