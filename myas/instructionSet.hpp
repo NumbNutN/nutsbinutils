@@ -14,6 +14,9 @@ private:
     //class for a set of instruction 
     std::vector<Instruction> set;
 
+protected:
+
+    section& base = (section&)*this;
 
 public:
     InstructionSet() :
@@ -31,8 +34,7 @@ public:
 
         //write the encode to buffer
         uint32_t code = ins.encode();
-        std::ostream bins = section::binstream();
-        bins.write((char*)&code,sizeof(uint32_t));
+        base << code;
         section::size() += sizeof(uint32_t);
     }
 

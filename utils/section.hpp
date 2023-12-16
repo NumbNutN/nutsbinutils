@@ -11,7 +11,6 @@ private:
     binbuf _buf;
     std::string _name;
     Elf32_Shdr _sechdr;  /* section header */
-    std::ostream _out;
 
 protected:
     
@@ -22,12 +21,7 @@ protected:
                 .sh_flags = flags,
                 .sh_addr = addr,
                 .sh_size = 0
-                }),
-                _out(std::ostream(&_buf)){}
-
-    std::ostream& binstream(){
-        return _out;
-    }
+                }){}
 
     uint32_t& size(){
         return _sechdr.sh_size;
@@ -60,11 +54,14 @@ public:
         _sechdr.sh_offset = off;
     }
 
-    friend std::ostream& operator<<(std::ostream& out,section& sec);
+    friend std::ostream& operator<<(std::ostream& out,const section& sec);
+
+    template <typename T>
+    friend section& operator<<(section& sec,T dat);
 
 };
 
-inline std::ostream& operator<<(std::ostream& out,section& sec)
+inline std::ostream& operator<<(std::ostream& out,const section& sec)
 {
     char c;
     out.seekp(sec._sechdr.sh_offset, std::ios::beg);
@@ -73,4 +70,16 @@ inline std::ostream& operator<<(std::ostream& out,section& sec)
         out.write(&c, 1);
     }
     return out;
+}
+
+template <typename T>
+inline section& operator<<(section& sec,T dat){
+    std::ostream out(&sec._buf);
+    out.write((const char*)&dat,sizeof(T));
+}
+
+template<>
+inline section& operator<<(section& sec,std::string dat){
+    std::ostream out(&sec._buf);
+    out << dat;
 }
