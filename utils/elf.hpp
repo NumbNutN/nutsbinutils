@@ -27,7 +27,7 @@ public:
         ehdr({
             .e_type = etype,
             .e_machine = EM_ARM,
-            .e_shoff = new_sechdroff(),
+            .e_shoff = 0x300,
             .e_shnum = 0,}),
 
         //initialize section header
@@ -37,9 +37,10 @@ public:
 
     }
 
-    void add_section(const binbuf& buf,size_t addr){
+    void add_section(section& sec){
         uint32_t offset = new_sechdroff();
-        shdr.insert(buf,addr,offset);
+        sec.setOffset(offset);
+        shdr.insert(sec);
     }
 
     friend std::ostream &operator<<(std::ostream& output,const elf &elf_struct);

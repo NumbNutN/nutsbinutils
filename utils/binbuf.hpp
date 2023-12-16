@@ -1,7 +1,6 @@
 #pragma once
 
 #include <streambuf>
-#include <iostream>
 
 #include <memory.h>
 #include <stdlib.h>
@@ -22,12 +21,8 @@ protected:
         char_type* lastbuf = buf;
         buf = (char_type*)realloc(buf,_size);
 
-        std::cout << std::hex << "buf " << (uint64_t)lastbuf << " pbegin " << (uint64_t)pbase() << " pnext " << (uint64_t)pptr() << " pend " << (uint64_t)epptr() << std::endl;
-
         //adjust the put area pointer
         setp(buf + (pptr() - lastbuf), buf+_size);
-
-        std::cout << std::hex << "buf " << (uint64_t)buf << " pbegin " << (uint64_t)pbase() << " pnext " << (uint64_t)pptr() << " pend " << (uint64_t)epptr() << std::endl;
 
         //get area pointer also
         setg(buf,buf + (gptr()-eback()),buf + (egptr() - eback()));
@@ -73,7 +68,6 @@ public:
         memcpy(buf,obj.buf,_size);
         setg(buf, buf + (obj.gptr() - obj.buf), buf + (obj.egptr() - obj.buf));
         setp(buf + (obj.pptr() - obj.buf),buf +_size);
-
     }
 
     size_t length() const{

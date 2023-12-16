@@ -99,9 +99,8 @@ extern elf elfobj;
 TEXT
     : INSTRUCTION_SET                           {
         //instruction set over
-        //create a section object
-        binbuf buf= $1->content();
-        elfobj.add_section(buf,0x0);
+        //add the section
+        elfobj.add_section(*$1);
     }
 
 INSTRUCTION_SET

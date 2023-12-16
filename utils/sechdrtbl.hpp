@@ -10,40 +10,40 @@
 #include <memory>
 
 #include "binbuf.hpp"
+#include "strtbl.hpp"
+#include "section.hpp"
 
 class shdrtbl{
 
 public:
 
-    struct unit{
-        Elf32_Shdr shdr;
-        binbuf dat;
-    };
 private:
 
     Elf32_Ehdr& _ehdr;
 
+    //section string table
+    strtbl shstrtbl;
+
     //section header table
-    std::vector<unit> sectionUnitList;
+    std::vector<section> sectionUnitList;
 
 public:
 
-    shdrtbl(Elf32_Ehdr& ehdr):_ehdr(ehdr){}
+    shdrtbl(Elf32_Ehdr& ehdr):_ehdr(ehdr){
 
-    void insert(const binbuf& buf,uint32_t addr,uint32_t offset){
+        //insert a section string table
+        shstrtbl.setOffset(0x300);
+        insert(shstrtbl);
+    }
+
+    void insert(section& sec){
         
-        Elf32_Shdr sechdr = {
-            .sh_type = SHT_PROGBITS,
-            .sh_flags = SHF_WRITE | SHF_ALLOC | SHF_EXECINSTR,
-            .sh_addr = addr,
-            .sh_offset = offset,
-            .sh_size = (uint32_t)buf.length()
-        };
+        //also insert the section name to shstrtbl
+        uint32_t idx = shstrtbl.insert(sec.getName());
+        sec.setNameIdx(idx);
 
-        sectionUnitList.push_back({
-            sechdr,
-            buf
-        });
+        //push to section table
+        sectionUnitList.push_back(sec);
 
         _ehdr.e_shnum++;
     }
@@ -55,22 +55,16 @@ public:
 inline std::ostream &operator<<(std::ostream& out,const shdrtbl& stbl){
 
     //get the last section offset
-    uint32_t shdr_off = stbl.sectionUnitList.back().shdr.sh_offset + 0x100;
+    uint32_t shdr_off = stbl.sectionUnitList.back().getSectionHeader().sh_offset + 0x100;
     stbl._ehdr.e_shoff = shdr_off;
 
-    for(const shdrtbl::unit& obj :stbl.sectionUnitList){
+    for(const section& sec:stbl.sectionUnitList){
         //write section header table
         out.seekp(stbl._ehdr.e_shoff, std::ios::beg);
-        out.write(reinterpret_cast<const char*>(&obj.shdr), sizeof(Elf32_Shdr));
+        out.write(reinterpret_cast<const char*>(&sec.getSectionHeader()), sizeof(Elf32_Shdr));
 
         //write each section
-        char c;
-        size_t len = obj.dat.length();
-        std::istream in((std::streambuf*)&obj.dat);
-        out.seekp(obj.shdr.sh_offset, std::ios::beg);
-        while(in.get(c)){
-            out.write(&c, 1);
-        }
+        out << sec;
     }
     
     return out;
