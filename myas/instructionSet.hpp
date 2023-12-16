@@ -34,7 +34,12 @@ public:
     }
 
     //return the machine code memory space address
-    const binbuf& content() const {
+    const binbuf& content(){
+        
+        std::ostream out(&buf);
+        //buffer must be flush before return
+        //else it will get problem when copy
+        out.flush();
         return buf;
     }
     

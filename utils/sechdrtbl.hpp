@@ -44,7 +44,7 @@ public:
             sechdr,
             buf
         });
-        
+
         _ehdr.e_shnum++;
     }
 
@@ -55,7 +55,7 @@ public:
 inline std::ostream &operator<<(std::ostream& out,const shdrtbl& stbl){
 
     //get the last section offset
-    uint32_t shdr_off = stbl.sectionUnitList.back().shdr.sh_offset + 4096;
+    uint32_t shdr_off = stbl.sectionUnitList.back().shdr.sh_offset + 0x100;
     stbl._ehdr.e_shoff = shdr_off;
 
     for(const shdrtbl::unit& obj :stbl.sectionUnitList){
@@ -65,6 +65,7 @@ inline std::ostream &operator<<(std::ostream& out,const shdrtbl& stbl){
 
         //write each section
         char c;
+        size_t len = obj.dat.length();
         std::istream in((std::streambuf*)&obj.dat);
         out.seekp(obj.shdr.sh_offset, std::ios::beg);
         while(in.get(c)){
@@ -72,4 +73,5 @@ inline std::ostream &operator<<(std::ostream& out,const shdrtbl& stbl){
         }
     }
     
+    return out;
 }
