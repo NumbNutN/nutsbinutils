@@ -23,7 +23,9 @@ MUL "mul"|"MUL"
 LDR "ldr"|"LDR"
 STR "str"|"STR"
 UMULL "umull"|"UMULL" //64位无符号乘法
-UMLAL "umlal"|"UMLAL" //64位无符号乘加 
+UMLAL "umlal"|"UMLAL" //64位无符号乘加
+MOV "mov"|"MOV"
+SVC "svc"|"SVC"
 
 GT  gt|GT
 LT  lt|LT
@@ -71,6 +73,8 @@ R11 [rR]11
 {MUL}   {yylval.opCode = Mnemonic::MUL;return FIELD_OPCODE;}
 {LDR}   {yylval.opCode = Mnemonic::LDR;return FIELD_OPCODE;}
 {STR}   {yylval.opCode = Mnemonic::STR;return FIELD_OPCODE;}
+{MOV}   {yylval.opCode = Mnemonic::MOV;return FIELD_OPCODE;}
+{SVC}   {yylval.opCode = Mnemonic::SVC;return FIELD_OPCODE;}
 
 {R0}    {yylval.reg = R0;return FIELD_REGISTER;}
 {R1}    {yylval.reg = R1;return FIELD_REGISTER;}

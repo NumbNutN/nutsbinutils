@@ -28,7 +28,8 @@ unordered_map<Mnemonic::_Opcode,uint32_t> Mnemonic::op2Code  = {
     {MVN,0b0001111 << opCodeIdx},
     //Single Data Transfer
     {LDR,0b01000001 << load_store_bitIdx},
-    {STR,0b01000000 << load_store_bitIdx}
+    {STR,0b01000000 << load_store_bitIdx},
+    {SVC,0b1111 << 24}
 
 };   
 

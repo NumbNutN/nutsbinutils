@@ -38,8 +38,9 @@ public:
         STR,
 
         UMULL,   //64位无符号乘法
-        UMLAL   //64位无符号乘加
+        UMLAL,   //64位无符号乘加
 
+        SVC
     };
 
     enum asm_affix{
@@ -68,9 +69,6 @@ private:
     unsigned setCond:1;   /* 是否设置状态位*/   /* 0 unset 1 set  20idx*/
     asm_byteword byteWordBit:1;  /* 0 word 1 byte    22idx*/
 
-    //code
-    uint32_t code;
-
     static unordered_map<Mnemonic::_Opcode,uint32_t> op2Code;
     static unordered_map<Mnemonic::asm_affix,uint32_t> cond2Code;
 
@@ -96,12 +94,9 @@ public:
 
     friend ostream& operator<<(ostream& out,const Mnemonic& mnemonic);
 
-    uint32_t encode(){
-        // cout << Mnemonic::op2Code.size();
-        // //操作码
-        // for(auto x:Mnemonic::op2Code){
-        //     cout << x.second << endl;
-        // }
+    uint32_t encode() const{
+
+        uint32_t code = 0;
         code |= Mnemonic::op2Code.at(opcode);
         //条件码
         code |= Mnemonic::cond2Code.at(cond);   

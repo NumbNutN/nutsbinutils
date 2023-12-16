@@ -40,9 +40,16 @@ private:
 public:
 
     /**
+     * SVC index
+    */
+    Instruction(const Mnemonic& mnemonic){
+        code |= mnemonic.encode();
+    }
+
+    /**
      * Dataprocess rd rn op2
     */
-    Instruction(Mnemonic& mnemonic,Operand<Rd>& rd,Operand<Rn>& rn,Operand<Op2>& op2){
+    Instruction(const Mnemonic& mnemonic,Operand<Rd>& rd,Operand<Rn>& rn,Operand<Op2>& op2){
         code |= mnemonic.encode();
         code |= rd.encode();
         code |= rn.encode();
@@ -51,13 +58,13 @@ public:
     /**
      * Mov rd op2
     */
-    Instruction(Mnemonic& mnemonic,Operand<Rd>& rd,Operand<Op2>& op2):
+    Instruction(const Mnemonic& mnemonic,Operand<Rd>& rd,Operand<Op2>& op2):
         Instruction(mnemonic,rd,none_rn,op2) {}
 
     /*
      * SingleDataTransfer rd , [rn,off]
     */
-    Instruction(Mnemonic& mnemonic,Operand<Rd>& rd,Operand<Rn>& rn,Operand<Off>& off,PrePostIndex prePostIndexingBit = NOPREPOST, WriteBack writeBack = NOWRITEBACK){
+    Instruction(const Mnemonic& mnemonic,Operand<Rd>& rd,Operand<Rn>& rn,Operand<Off>& off,PrePostIndex prePostIndexingBit = NOPREPOST, WriteBack writeBack = NOWRITEBACK){
         code |= mnemonic.encode();
         code |= rd.encode();
         code |= rn.encode();
@@ -69,7 +76,7 @@ public:
     /*
      * SingleDataTransfer rd , [rn]
     */
-    Instruction(Mnemonic& mnemonic,Operand<Rd>& rd,Operand<Rn>& rn):
+    Instruction(const Mnemonic& mnemonic,Operand<Rd>& rd,Operand<Rn>& rn):
         Instruction(mnemonic,rd,rn,none_offset){}
 
 

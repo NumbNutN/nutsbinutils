@@ -18,7 +18,7 @@ private:
 public:
 
     uint32_t new_sechdroff(){
-        _off_cnt += 0x1000;
+        _off_cnt += 0x100;
         return _off_cnt;
     }
 
@@ -52,4 +52,6 @@ inline std::ostream &operator<<(std::ostream& output,const elf &elf_struct){
 
     //write section header table & sections
     output << elf_struct.shdr;
+
+    return output;
 }

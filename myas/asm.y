@@ -123,7 +123,10 @@ INSTRUCTION_SET
     }
 
 INSTRUCTION
-    : MNEMONIC                                  {}
+    /* SVC */
+    : MNEMONIC  IMMEDIATE                       {
+        $$ = new Instruction(*$1);
+    }
 
     /* Data Processing */
     | MNEMONIC RD ',' OPERAND2                  {
