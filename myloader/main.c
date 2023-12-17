@@ -18,9 +18,9 @@ void my_execve(const char* file,char* argv[],char *envp[]){
     int fd = open(file,O_RDONLY);
     assert(fd >= 0 && "file is not existed");
 
-    Elf32_Ehdr* h = mmap(NULL,4096,PROT_READ,MAP_PRIVATE,fd,0);
+    Elf32_Ehdr* h = (Elf32_Ehdr*)mmap(NULL,4096,PROT_READ,MAP_PRIVATE,fd,0);
     assert(h != MAP_FAILED);
-    assert(h->e_type == ET_EXEC && h->e_machine == EM_ARM);
+    assert((h->e_type == ET_EXEC || h->e_type == ET_REL) && h->e_machine == EM_ARM);
 
     //program segment header table
     Elf32_Phdr* pht = (Elf32_Phdr*)((char*)h + h->e_phoff);

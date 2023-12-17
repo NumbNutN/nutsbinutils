@@ -13,7 +13,7 @@
 ######################################
 # target
 ######################################
-TARGET = myas
+TARGET = myloader
 
 
 ######################################
@@ -36,14 +36,9 @@ BUILD_DIR = build
 ######################################
 # C sources
 C_SOURCES = \
-parser.c \
-scanner.c 
+main.c
 
 CPP_SOURCES = \
-tool.cpp \
-operand.cpp \
-main.cpp 
-
 
 
 #######################################
@@ -53,13 +48,13 @@ PREFIX =
 # The gcc compiler bin path can be either defined in make command via GCC_PATH variable (> make GCC_PATH=xxx)
 # either it can be added to the PATH environment variable.
 ifdef GCC_PATH
-CC = $(GCC_PATH)/$(PREFIX)g++
-AS = $(GCC_PATH)/$(PREFIX)g++ -x assembler-with-cpp
+CC = $(GCC_PATH)/$(PREFIX)gcc
+AS = $(GCC_PATH)/$(PREFIX)gcc -x assembler-with-cpp
 CP = $(GCC_PATH)/$(PREFIX)objcopy
 SZ = $(GCC_PATH)/$(PREFIX)size
 else
-CC = $(PREFIX)g++
-AS = $(PREFIX)g++ -x assembler-with-cpp
+CC = $(PREFIX)gcc
+AS = $(PREFIX)gcc -x assembler-with-cpp
 CP = $(PREFIX)objcopy
 SZ = $(PREFIX)size
 endif
@@ -95,7 +90,7 @@ endif
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 
 LIBDIR = 
-LIBS = -lfl
+LIBS =
 
 #######################################
 # LDFLAGS
