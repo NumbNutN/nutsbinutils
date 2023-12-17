@@ -19,25 +19,38 @@ public:
     void insert(segment& seg){
 
         //select a new offset
-        uint32_t off = elf::allocoffset(seg.size());
+        uint32_t off = allocoffset(seg.size());
         seg.setOffset(off);
 
         //push to program table
         segmentUnitList.push_back(seg);
     }
 
+    void setEntry(Elf32_Word entry){
+        _ehdr.e_entry = entry;
+    }
+
+    void arange(){
+
+        //arange for program header table
+        _ehdr.e_phoff += getcuroffset();
+    }
+
     friend std::ostream &operator<<(std::ostream& output,const exculate_file& exec);
 
 };
 
-std::ostream &operator<<(std::ostream& output,const exculate_file& exec){
+inline std::ostream &operator<<(std::ostream& output,const exculate_file& exec){
 
     output << exec.base;
     //write segment header table & sections
     //write segment header table
     output.seekp(exec._ehdr.e_phoff, std::ios::beg);
-    for(const segment& seg:exec.segmentUnitList)
-        output.write(reinterpret_cast<const char*>(&seg.getHeader()), sizeof(Elf32_Shdr));
+    for(const segment& seg:exec.segmentUnitList){
+        Elf32_Phdr phdr = seg.getHeader();
+        output.write(reinterpret_cast<const char*>(&phdr), sizeof(Elf32_Shdr));
+    }
+        
     for(const segment& seg:exec.segmentUnitList){
         //write each program
         output.seekp(seg.getHeader().p_offset,std::ios::beg);

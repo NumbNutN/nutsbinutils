@@ -1,3 +1,5 @@
+#pragma once
+
 #include <elf.h>
 
 #include <vector>
@@ -57,7 +59,7 @@ public:
         }
     }
 
-    const Elf32_Phdr getHeader(){
+    Elf32_Phdr getHeader() const{
         return _phdr;
     }
 
@@ -71,6 +73,12 @@ template <typename T>
 inline segment& operator<<(segment& seg,T dat){
     std::ostream out(&seg._buf);
     out.write((const char*)&dat,sizeof(T));
+}
+
+template<>
+inline segment& operator<<(segment& seg,const section& sec){
+    std::ostream out(&seg._buf);
+    out << sec;
 }
 
 inline std::ostream& operator<<(std::ostream& out,const segment& seg)

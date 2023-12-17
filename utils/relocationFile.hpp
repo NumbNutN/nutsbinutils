@@ -19,38 +19,31 @@ private:
 
     elf& base = (elf&)*this;
 
-    Elf32_Ehdr _ehdr;        /* ELF header */
-
     //section string table
     strtbl shstrtbl;
 
     //section header table
-    std::vector<section> sectionUnitList;
+    std::vector<section> sectionUnitList;    
 
-    uint32_t poff = 0x100;
-    
 public:
 
-    uint32_t allocoffset(uint32_t size){
-        uint32_t tmp = poff;
-        uint32_t map_sz = MOD(size,3)?(ROUND(size,3)+(1<<3)):size;
-        poff += map_sz;
-        return tmp;
-    }
+    relocation_file() : elf(ET_REL){
 
-    relocation_file() : elf(ET_REL){}
+    }
 
     void arange(){
 
         //insert a section string table
-        shstrtbl.setOffset(poff + 0x100);
+        uint32_t off = allocoffset(shstrtbl.size());
+        shstrtbl.setOffset(off);
+
         //the section string table idx
         _ehdr.e_shstrndx = _ehdr.e_shnum;
         //push section string table section to section table
         insert(shstrtbl);
 
-        //arange for section header table
-        _ehdr.e_shoff += poff;
+        //arange for program header table
+        _ehdr.e_shoff += getcuroffset();
     }
 
     void insert(section& sec){
@@ -69,22 +62,63 @@ public:
         _ehdr.e_shnum++;
     }
 
-    friend std::ostream &operator<<(std::ostream& output,const relocation_file &elf_struct);
+    friend std::ostream &operator<<(std::ostream& output,const relocation_file &relo);
+    friend std::istream &operator>>(std::istream& input,relocation_file &relo);
+
+public:
+
+    //iterator
+    using iterator = typename std::vector<section>::iterator;
+
+    //implement begin and end
+    iterator begin(){
+        return sectionUnitList.begin();
+    }
+
+    iterator end(){
+        return sectionUnitList.end();
+    }
+
 };
 
-inline std::ostream &operator<<(std::ostream& output,const relocation_file &elf_struct){
+inline std::ostream &operator<<(std::ostream& output,const relocation_file &relo){
 
-    output << elf_struct.base;
+    //first output elf header
+    output << relo.base;
 
     //write section header table & sections
     //write section header table
-    output.seekp(elf_struct._ehdr.e_shoff, std::ios::beg);
-    for(const section& sec:elf_struct.sectionUnitList)
-        output.write(reinterpret_cast<const char*>(&sec.getSectionHeader()), sizeof(Elf32_Shdr));
-    for(const section& sec:elf_struct.sectionUnitList){
+    output.seekp(relo._ehdr.e_shoff, std::ios::beg);
+    for(const section& sec:relo.sectionUnitList)
+        output.write(reinterpret_cast<const char*>(&sec.getHeader()), sizeof(Elf32_Shdr));
+    for(const section& sec:relo.sectionUnitList){
         //write each section
-        output.seekp(sec.getSectionHeader().sh_offset,std::ios::beg);
+        output.seekp(sec.getHeader().sh_offset,std::ios::beg);
         output << sec;
     }
     return output;
+}
+
+/**
+ * read a relocable file
+*/
+inline std::istream &operator>>(std::istream& input,relocation_file &relo){
+
+    //read elf header
+    input >> relo.base;
+
+    input.seekg(relo._ehdr.e_shoff, std::ios::beg);
+    for(int i=0;i<relo._ehdr.e_shnum;++i){
+        
+        //create a new section object
+        Elf32_Shdr shdr;
+        input.get((char*)&shdr, sizeof(Elf32_Shdr));
+        section sec(shdr);
+        relo.sectionUnitList.push_back(sec);
+
+        //read the section content
+        input >> sec;
+    }
+    //all done 
+    return input;
 }

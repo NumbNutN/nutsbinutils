@@ -23,13 +23,6 @@ protected:
                 .sh_size = 0
                 }){}
 
-    /*
-     * the derived have the voluntary to refresh size
-    */
-    uint32_t& size(){
-        return _sechdr.sh_size;
-    }
-
     const binbuf& buffer(){
         
         std::ostream out(&_buf);
@@ -41,7 +34,12 @@ protected:
 
 public:
 
-    const Elf32_Shdr& getSectionHeader() const{
+    /*
+     * create a section object using section header,basically use when reading from file
+    */
+    section(const Elf32_Shdr& sechdr): _sechdr(sechdr){}
+
+    const Elf32_Shdr& getHeader() const{
         return _sechdr;
     }
 
@@ -53,6 +51,13 @@ public:
         return _sechdr.sh_size;
     }
 
+    /*
+     * the derived have the voluntary to refresh size
+    */
+    uint32_t& size(){
+        return _sechdr.sh_size;
+    }
+
     void setNameIdx(uint32_t idx){
         _sechdr.sh_name = idx;
     }
@@ -61,7 +66,12 @@ public:
         _sechdr.sh_offset = off;
     }
 
+    uint32_t flags() const{
+        return _sechdr.sh_flags;
+    }
+
     friend std::ostream& operator<<(std::ostream& out,const section& sec);
+    friend std::istream& operator>>(std::istream& in,section& sec);
 
     template <typename T>
     friend section& operator<<(section& sec,T dat);
@@ -77,6 +87,20 @@ inline std::ostream& operator<<(std::ostream& out,const section& sec)
         out.write(&c, 1);
     }
     return out;
+}
+
+/**
+ * the input stream is usually a binary stream from file
+*/
+inline std::istream& operator>>(std::istream& in,section& sec){
+
+    char c;
+    in.seekg(sec._sechdr.sh_offset, std::ios::beg);
+    std::ostream out(&sec._buf);
+    while(in.get(c)){
+        out.write(&c, 1);
+    }
+    return in;
 }
 
 template <typename T>

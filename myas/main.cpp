@@ -2,6 +2,7 @@
 #include "operand.hpp"
 #include "instruction.hpp"
 #include "instructionSet.hpp"
+#include "relocationFile.hpp"
 
 #include "scanner.h"
 #include "parser.h"
@@ -44,7 +45,7 @@ unordered_map<Mnemonic::asm_affix,uint32_t> Mnemonic::cond2Code = {
 };
 
 //create a elf object
-relocation_file elfobj = relocation_file(ET_REL);
+relocation_file reloobj = relocation_file();
 
 int main(int argc,char** argv)
 {
@@ -59,10 +60,10 @@ int main(int argc,char** argv)
     yyparse();
 
     //rearange the section 
-    elfobj.arange();
+    reloobj.arange();
     
     //write elf file
-    output << elfobj;
+    output << reloobj;
 
 	return 0;
 }

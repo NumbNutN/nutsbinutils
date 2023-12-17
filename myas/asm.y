@@ -9,6 +9,7 @@
 #include "instructionSet.hpp"
 #include "instruction.hpp"
 #include "elf.hpp"
+#include "relocationFile.hpp"
 #include "binbuf.hpp"
 
 #include <iostream>
@@ -31,7 +32,7 @@ void yyerror(char *s, ...) // 变长参数错误处理函数
 
 extern "C" int yylex();
 
-extern elf elfobj;
+extern relocation_file reloobj;
 
 %}
 
@@ -97,7 +98,7 @@ TEXT
     : INSTRUCTION_SET                           {
         //instruction set over
         //add the section
-        elfobj.insert(*$1);
+        reloobj.insert(*$1);
     }
 
 INSTRUCTION_SET
