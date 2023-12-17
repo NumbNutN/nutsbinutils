@@ -39,17 +39,20 @@ public:
         _ehdr({
             .e_type = etype,
             .e_machine = EM_ARM,
+            .e_version = EV_CURRENT,
             .e_entry = 0x0,
             .e_shoff = 0x200,
+            .e_flags = 0x5000200,
             .e_ehsize = sizeof(Elf32_Ehdr),
             .e_shentsize = sizeof(Elf32_Shdr),
             .e_shnum = 0,
             .e_shstrndx = 0})
     {
         //initialize section header
-        *_ehdr.e_ident = 0x7F;
-        memcpy(_ehdr.e_ident+1,"ELF",3);
-        
+        char magic[] = {
+            ELFMAG0,ELFMAG1,ELFMAG2,ELFMAG3,ELFCLASS32,ELFDATA2LSB,EV_CURRENT,ELFOSABI_SYSV,0
+        };
+        memcpy(_ehdr.e_ident,magic,sizeof(magic));
     }
 
     void arange(){
