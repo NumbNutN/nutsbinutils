@@ -11,7 +11,8 @@
 #include <vector>
 #include <string>
 #include <fstream>
-class elf{
+
+class relocation_file{
 
 private:
 
@@ -34,7 +35,7 @@ public:
         return tmp;
     }
 
-    elf(uint16_t etype) : 
+    relocation_file(uint16_t etype) : 
         //initialize elf header
         _ehdr({
             .e_type = etype,
@@ -84,10 +85,10 @@ public:
         _ehdr.e_shnum++;
     }
 
-    friend std::ostream &operator<<(std::ostream& output,const elf &elf_struct);
+    friend std::ostream &operator<<(std::ostream& output,const relocation_file &elf_struct);
 };
 
-inline std::ostream &operator<<(std::ostream& output,const elf &elf_struct){
+inline std::ostream &operator<<(std::ostream& output,const relocation_file &elf_struct){
 
     //write elf header
     output.write(reinterpret_cast<const char*>(&elf_struct._ehdr), sizeof(Elf32_Ehdr));

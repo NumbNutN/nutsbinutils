@@ -44,7 +44,7 @@ unordered_map<Mnemonic::asm_affix,uint32_t> Mnemonic::cond2Code = {
 };
 
 //create a elf object
-elf elfobj = elf(ET_REL);
+relocation_file elfobj = relocation_file(ET_REL);
 
 int main(int argc,char** argv)
 {
