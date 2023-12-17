@@ -1,5 +1,6 @@
 #include <elf.h>
 
+#include "elf.hpp"
 #include "section.hpp"
 #include "binbuf.hpp"
 #include "strtbl.hpp"
@@ -12,9 +13,11 @@
 #include <string>
 #include <fstream>
 
-class relocation_file{
+class relocation_file : public elf{
 
 private:
+
+    elf& base = (elf&)*this;
 
     Elf32_Ehdr _ehdr;        /* ELF header */
 
@@ -35,26 +38,7 @@ public:
         return tmp;
     }
 
-    relocation_file(uint16_t etype) : 
-        //initialize elf header
-        _ehdr({
-            .e_type = etype,
-            .e_machine = EM_ARM,
-            .e_version = EV_CURRENT,
-            .e_entry = 0x0,
-            .e_shoff = 0x200,
-            .e_flags = 0x5000200,
-            .e_ehsize = sizeof(Elf32_Ehdr),
-            .e_shentsize = sizeof(Elf32_Shdr),
-            .e_shnum = 0,
-            .e_shstrndx = 0})
-    {
-        //initialize section header
-        char magic[] = {
-            ELFMAG0,ELFMAG1,ELFMAG2,ELFMAG3,ELFCLASS32,ELFDATA2LSB,EV_CURRENT,ELFOSABI_SYSV,0
-        };
-        memcpy(_ehdr.e_ident,magic,sizeof(magic));
-    }
+    relocation_file() : elf(ET_REL){}
 
     void arange(){
 
@@ -72,7 +56,7 @@ public:
     void insert(section& sec){
         
         //select a new offset
-        uint32_t offset = allocoffset(sec.getSize());
+        uint32_t offset = allocoffset(sec.size());
         sec.setOffset(offset);
 
         //also insert the section name to shstrtbl
@@ -90,8 +74,7 @@ public:
 
 inline std::ostream &operator<<(std::ostream& output,const relocation_file &elf_struct){
 
-    //write elf header
-    output.write(reinterpret_cast<const char*>(&elf_struct._ehdr), sizeof(Elf32_Ehdr));
+    output << elf_struct.base;
 
     //write section header table & sections
     //write section header table
@@ -103,6 +86,5 @@ inline std::ostream &operator<<(std::ostream& output,const relocation_file &elf_
         output.seekp(sec.getSectionHeader().sh_offset,std::ios::beg);
         output << sec;
     }
-
     return output;
 }

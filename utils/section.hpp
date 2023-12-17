@@ -23,6 +23,9 @@ protected:
                 .sh_size = 0
                 }){}
 
+    /*
+     * the derived have the voluntary to refresh size
+    */
     uint32_t& size(){
         return _sechdr.sh_size;
     }
@@ -46,7 +49,7 @@ public:
         return _name;
     }
 
-    uint32_t getSize() const{
+    uint32_t size() const{
         return _sechdr.sh_size;
     }
 
