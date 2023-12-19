@@ -43,9 +43,13 @@ public:
         _phdr.p_offset = off;
     }
 
+    /* insert section into segment for management
+     * also copy the content
+    */
     void insert(const section& sec){
 
         sectionUnitList.push_back(sec);
+        *this << sec;
     }
 
     void link(){
@@ -54,8 +58,11 @@ public:
         std::ostream out(&_buf);
         for(section sec:sectionUnitList){
             out << sec;
-            //refresh size of segment
-            size() += sec.size();
+
+            //refresh file size of segment
+            _phdr.p_filesz += sec.size();
+            //refresh memory size of segment
+            _phdr.p_memsz += sec.size();
         }
     }
 
@@ -83,11 +90,15 @@ inline segment& operator<<(segment& seg,const section& sec){
 
 inline std::ostream& operator<<(std::ostream& out,const segment& seg)
 {
-    char c;
     out.seekp(seg._phdr.p_offset, std::ios::beg);
     std::istream in((std::streambuf*)&seg._buf);
-    while(in.get(c)){
-        out.write(&c, 1);
-    }
+
+    //write as segment size says
+    char tmp[seg.getHeader().p_filesz];
+    in.get(tmp, seg.getHeader().p_filesz);
+    out.write(tmp, seg.getHeader().p_filesz);
+    //flush the content so we see the content at once it put into the output stream
+    out.flush();
+
     return out;
 }

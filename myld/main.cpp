@@ -8,11 +8,11 @@
 #include <vector>
 #include <unordered_map>
 
-Elf32_Word secFlag2ProFlag(Elf32_Word){
+Elf32_Word secFlag2ProFlag(Elf32_Word secFlag){
     Elf32_Word res = 0;
-    if((res & SHF_WRITE) == SHF_WRITE)res |= PF_W;
-    if((res & SHF_EXECINSTR) == SHF_EXECINSTR)res |= PF_X;
-    if((res & SHF_ALLOC) == SHF_ALLOC)res |= PF_R;
+    if((secFlag & SHF_WRITE) == SHF_WRITE)res |= PF_W;
+    if((secFlag & SHF_EXECINSTR) == SHF_EXECINSTR)res |= PF_X;
+    if((secFlag & SHF_ALLOC) == SHF_ALLOC)res |= PF_R;
     return res;
 }
 
@@ -83,8 +83,11 @@ int main(int argc,char* argv[]){
 
         //insert all the section content to segment
         for(const section& sec:unit.second){
-            seg << sec;
+            seg.insert(sec);
         }
+
+        //linking the section before segment insert to exec
+        seg.link();
 
         exec_obj.insert(seg);
     }

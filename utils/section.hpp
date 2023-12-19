@@ -4,6 +4,7 @@
 
 #include <elf.h>
 #include <iostream>
+#include <streambuf>
 
 class section{
 
@@ -80,12 +81,13 @@ public:
 
 inline std::ostream& operator<<(std::ostream& out,const section& sec)
 {
-    char c;
     out.seekp(sec._sechdr.sh_offset, std::ios::beg);
     std::istream in((std::streambuf*)&sec._buf);
-    while(in.get(c)){
-        out.write(&c, 1);
-    }
+    char tmp[sec.size()];
+    in.get(tmp,sec.size());
+    size_t cnt = in.gcount();
+    out.write(tmp, sec.size());
+    out.flush();
     return out;
 }
 
@@ -95,11 +97,19 @@ inline std::ostream& operator<<(std::ostream& out,const section& sec)
 inline std::istream& operator>>(std::istream& in,section& sec){
 
     char c;
+    //record current offset
+    std::streambuf::pos_type off = in.tellg();
+
     in.seekg(sec._sechdr.sh_offset, std::ios::beg);
     std::ostream out(&sec._buf);
-    while(in.get(c)){
-        out.write(&c, 1);
-    }
+
+    char tmp[sec._sechdr.sh_size];
+    in.get(tmp, sec._sechdr.sh_size);
+    out.write(tmp, sec._sechdr.sh_size);
+
+    //resume the current offset
+    in.seekg(off);
+
     return in;
 }
 

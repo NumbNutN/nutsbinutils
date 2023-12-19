@@ -25,6 +25,8 @@ protected:
             .e_shoff = 0x0,
             .e_flags = 0x5000200,
             .e_ehsize = sizeof(Elf32_Ehdr),
+            .e_phentsize = sizeof(Elf32_Phdr),
+            .e_phnum = 0,
             .e_shentsize = sizeof(Elf32_Shdr),
             .e_shnum = 0,
             .e_shstrndx = 0})
@@ -60,6 +62,8 @@ inline std::ostream &operator<<(std::ostream& output,const elf &elf_struct){
     //write elf header
     output.seekp(0x0, std::ios::beg);
     output.write(reinterpret_cast<const char*>(&elf_struct._ehdr), sizeof(Elf32_Ehdr));
+    //flush the content so we see the content at once it put into the output stream
+    output.flush();
     return output;
 }
 

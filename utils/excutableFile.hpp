@@ -24,6 +24,9 @@ public:
 
         //push to program table
         segmentUnitList.push_back(seg);
+
+        //add segment number
+        _ehdr.e_phnum += 1;
     }
 
     void setEntry(Elf32_Word entry){
@@ -31,7 +34,6 @@ public:
     }
 
     void arange(){
-
         //arange for program header table
         _ehdr.e_phoff += getcuroffset();
     }
@@ -43,16 +45,17 @@ public:
 inline std::ostream &operator<<(std::ostream& output,const exculate_file& exec){
 
     output << exec.base;
-    //write segment header table & sections
-    //write segment header table
+    // write segment header table & segments
+
+    // write segment header table
     output.seekp(exec._ehdr.e_phoff, std::ios::beg);
     for(const segment& seg:exec.segmentUnitList){
         Elf32_Phdr phdr = seg.getHeader();
-        output.write(reinterpret_cast<const char*>(&phdr), sizeof(Elf32_Shdr));
+        output.write(reinterpret_cast<const char*>(&phdr), sizeof(Elf32_Phdr));
+        output.flush();
     }
-        
+    //write each program
     for(const segment& seg:exec.segmentUnitList){
-        //write each program
         output.seekp(seg.getHeader().p_offset,std::ios::beg);
         output << seg;
     }

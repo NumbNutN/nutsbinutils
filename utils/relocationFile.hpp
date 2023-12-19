@@ -27,9 +27,7 @@ private:
 
 public:
 
-    relocation_file() : elf(ET_REL){
-
-    }
+    relocation_file() : elf(ET_REL){}
 
     void arange(){
 
@@ -42,8 +40,8 @@ public:
         //push section string table section to section table
         insert(shstrtbl);
 
-        //arange for program header table
-        _ehdr.e_shoff += getcuroffset();
+        //arange for section header table
+        _ehdr.e_shoff =0x300;
     }
 
     void insert(section& sec){
@@ -89,8 +87,11 @@ inline std::ostream &operator<<(std::ostream& output,const relocation_file &relo
     //write section header table & sections
     //write section header table
     output.seekp(relo._ehdr.e_shoff, std::ios::beg);
-    for(const section& sec:relo.sectionUnitList)
+    for(const section& sec:relo.sectionUnitList){
         output.write(reinterpret_cast<const char*>(&sec.getHeader()), sizeof(Elf32_Shdr));
+        output.flush();
+    }
+
     for(const section& sec:relo.sectionUnitList){
         //write each section
         output.seekp(sec.getHeader().sh_offset,std::ios::beg);
@@ -107,11 +108,14 @@ inline std::istream &operator>>(std::istream& input,relocation_file &relo){
     //read elf header
     input >> relo.base;
 
-    input.seekg(relo._ehdr.e_shoff, std::ios::beg);
     for(int i=0;i<relo._ehdr.e_shnum;++i){
         
         //create a new section object
         Elf32_Shdr shdr;
+        input.seekg(relo._ehdr.e_shoff + i*sizeof(Elf32_Shdr), std::ios::beg);
+        //TODO what's on earth the behaviour of tellg and gcount
+        std::streambuf::pos_type pos = input.tellg();
+        size_t cnt = input.gcount();
         input.get((char*)&shdr, sizeof(Elf32_Shdr));
         section sec(shdr);
         relo.sectionUnitList.push_back(sec);
