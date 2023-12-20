@@ -108,21 +108,37 @@ inline std::istream &operator>>(std::istream& input,relocation_file &relo){
     //read elf header
     input >> relo.base;
 
+    //read the shstrtbl first
+    Elf32_Word shoff = relo._ehdr.e_shoff;
+    Elf32_Shdr shstrtblhdr;
+    input.seekg(shoff + relo._ehdr.e_shstrndx * sizeof(Elf32_Shdr), std::ios::beg);
+    input.read((char*)&shstrtblhdr, sizeof(Elf32_Shdr));
+    strtbl shstrtbl(shstrtblhdr);
+    input >> shstrtbl;
+
     for(int i=0;i<relo._ehdr.e_shnum;++i){
         
+        //skip the shstrtbl
+        if(i == relo._ehdr.e_shstrndx)continue;
         //create a new section object
         Elf32_Shdr shdr;
+
+        //read the section header
         input.seekg(relo._ehdr.e_shoff + i*sizeof(Elf32_Shdr), std::ios::beg);
-        //TODO what's on earth the behaviour of tellg and gcount
-        std::streambuf::pos_type pos = input.tellg();
-        size_t cnt = input.gcount();
         input.get((char*)&shdr, sizeof(Elf32_Shdr));
-        section sec(shdr);
-        relo.sectionUnitList.push_back(sec);
+
+        //read the name of section
+        std::string name = shstrtbl.getName(shdr.sh_name);
+
+        //construct a section
+        section sec(name,shdr);
 
         //read the section content
         input >> sec;
+        relo.sectionUnitList.push_back(sec);
     }
     //all done 
     return input;
 }
+
+

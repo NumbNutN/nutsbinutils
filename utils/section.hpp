@@ -24,7 +24,7 @@ protected:
                 .sh_size = 0
                 }){}
 
-    const binbuf& buffer(){
+    binbuf& buffer(){
         
         std::ostream out(&_buf);
         //buffer must be flush before return
@@ -37,8 +37,9 @@ public:
 
     /*
      * create a section object using section header,basically use when reading from file
+     * name is required when construct from a relocatable file
     */
-    section(const Elf32_Shdr& sechdr): _sechdr(sechdr){}
+    section(const std::string& name,const Elf32_Shdr& sechdr): _name(name),_sechdr(sechdr){}
 
     const Elf32_Shdr& getHeader() const{
         return _sechdr;
