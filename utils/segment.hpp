@@ -46,7 +46,7 @@ public:
     /* insert section into segment for management
      * also copy the content
     */
-    void insert(const section& sec){
+    void insert(section& sec){
 
         sectionUnitList.push_back(sec);
         *this << sec;
@@ -70,19 +70,19 @@ public:
         return _phdr;
     }
 
-    template <typename T>
-    friend segment& operator<<(segment& seg,T dat);
+    // template <typename T>
+    // friend segment& operator<<(segment& seg,T dat);
+    friend segment& operator<<(segment& seg,section& sec);
 
     friend std::ostream& operator<<(std::ostream& out,segment& seg);
 };
 
-template <typename T>
-inline segment& operator<<(segment& seg,T dat){
-    std::ostream out(&seg._buf);
-    out.write((const char*)&dat,sizeof(T));
-}
+// template <typename T>
+// inline segment& operator<<(segment& seg,T dat){
+//     std::ostream out(&seg._buf);
+//     out.write((const char*)&dat,sizeof(T));
+// }
 
-template<>
 inline segment& operator<<(segment& seg,section& sec){
     std::ostream out(&seg._buf);
     out << sec;

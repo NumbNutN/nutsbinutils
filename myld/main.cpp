@@ -82,7 +82,7 @@ int main(int argc,char* argv[]){
         segment seg(PT_LOAD,0x0,0x0,flags);
 
         //insert all the section content to segment
-        for(const section& sec:unit.second){
+        for(section& sec:unit.second){
             seg.insert(sec);
         }
 

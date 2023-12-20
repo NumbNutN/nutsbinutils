@@ -28,7 +28,7 @@ public:
         in.seekg(index, std::ios::beg);
         
         char tmp[1024];
-        in.get(tmp, '\0');
+        in.get(tmp, 1024, '\0');
         std::string str(tmp);
         return str;
     }
