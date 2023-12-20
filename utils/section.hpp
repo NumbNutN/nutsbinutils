@@ -80,13 +80,12 @@ public:
 
 };
 
+// now section operator<< has no right to set put area offset
 inline std::ostream& operator<<(std::ostream& out,section& sec)
 {
-    out.seekp(sec._sechdr.sh_offset, std::ios::beg);
     std::istream in(&sec._buf);
     char tmp[sec.size()];
-    in.get(tmp,sec.size());
-    size_t cnt = in.gcount();
+    in.read(tmp,sec.size());
     out.write(tmp, sec.size());
     out.flush();
     return out;
@@ -97,19 +96,10 @@ inline std::ostream& operator<<(std::ostream& out,section& sec)
 */
 inline std::istream& operator>>(std::istream& in,section& sec){
 
-    char c;
-    //record current offset
-    std::streambuf::pos_type off = in.tellg();
-
-    in.seekg(sec._sechdr.sh_offset, std::ios::beg);
     std::ostream out(&sec._buf);
-
     char tmp[sec._sechdr.sh_size];
     in.get(tmp, sec._sechdr.sh_size);
     out.write(tmp, sec._sechdr.sh_size);
-
-    //resume the current offset
-    in.seekg(off);
 
     return in;
 }

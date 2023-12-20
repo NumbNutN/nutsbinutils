@@ -114,6 +114,7 @@ inline std::istream &operator>>(std::istream& input,relocation_file &relo){
     input.seekg(shoff + relo._ehdr.e_shstrndx * sizeof(Elf32_Shdr), std::ios::beg);
     input.read((char*)&shstrtblhdr, sizeof(Elf32_Shdr));
     strtbl shstrtbl(shstrtblhdr);
+    input.seekg(shstrtblhdr.sh_offset);
     input >> shstrtbl;
 
     for(int i=0;i<relo._ehdr.e_shnum;++i){
@@ -134,6 +135,7 @@ inline std::istream &operator>>(std::istream& input,relocation_file &relo){
         section sec(name,shdr);
 
         //read the section content
+        input.seekg(shdr.sh_offset);
         input >> sec;
         relo.sectionUnitList.push_back(sec);
     }

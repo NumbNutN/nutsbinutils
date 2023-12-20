@@ -1,6 +1,7 @@
 #pragma once
 
 #include <streambuf>
+#include <iostream>
 
 #include <memory.h>
 #include <stdlib.h>
@@ -103,7 +104,10 @@ public:
         setbuf(buf,_size);
     }
 
-    binbuf(const binbuf& obj):std::streambuf((std::streambuf&)obj){
+    binbuf(const binbuf& obj):std::streambuf(obj){
+        //flush before buffer copy
+        std::ostream out((std::streambuf*)&obj);
+        out.flush();
         _size = obj._size;
         buf = (char_type*)malloc(_size);
         memcpy(buf,obj.buf,_size);
