@@ -60,7 +60,7 @@ public:
         _ehdr.e_shnum++;
     }
 
-    friend std::ostream &operator<<(std::ostream& output,const relocation_file &relo);
+    friend std::ostream &operator<<(std::ostream& output,relocation_file &relo);
     friend std::istream &operator>>(std::istream& input,relocation_file &relo);
 
 public:
@@ -79,7 +79,7 @@ public:
 
 };
 
-inline std::ostream &operator<<(std::ostream& output,const relocation_file &relo){
+inline std::ostream &operator<<(std::ostream& output,relocation_file &relo){
 
     //first output elf header
     output << relo.base;
@@ -92,7 +92,7 @@ inline std::ostream &operator<<(std::ostream& output,const relocation_file &relo
         output.flush();
     }
 
-    for(const section& sec:relo.sectionUnitList){
+    for(section& sec:relo.sectionUnitList){
         //write each section
         output.seekp(sec.getHeader().sh_offset,std::ios::beg);
         output << sec;

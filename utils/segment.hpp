@@ -73,7 +73,7 @@ public:
     template <typename T>
     friend segment& operator<<(segment& seg,T dat);
 
-    friend std::ostream& operator<<(std::ostream& out,const segment& seg);
+    friend std::ostream& operator<<(std::ostream& out,segment& seg);
 };
 
 template <typename T>
@@ -83,15 +83,15 @@ inline segment& operator<<(segment& seg,T dat){
 }
 
 template<>
-inline segment& operator<<(segment& seg,const section& sec){
+inline segment& operator<<(segment& seg,section& sec){
     std::ostream out(&seg._buf);
     out << sec;
 }
 
-inline std::ostream& operator<<(std::ostream& out,const segment& seg)
+inline std::ostream& operator<<(std::ostream& out,segment& seg)
 {
     out.seekp(seg._phdr.p_offset, std::ios::beg);
-    std::istream in((std::streambuf*)&seg._buf);
+    std::istream in(&seg._buf);
 
     //write as segment size says
     char tmp[seg.getHeader().p_filesz];

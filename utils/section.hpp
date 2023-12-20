@@ -71,7 +71,7 @@ public:
         return _sechdr.sh_flags;
     }
 
-    friend std::ostream& operator<<(std::ostream& out,const section& sec);
+    friend std::ostream& operator<<(std::ostream& out,section& sec);
     friend std::istream& operator>>(std::istream& in,section& sec);
 
     template <typename T>
@@ -79,10 +79,10 @@ public:
 
 };
 
-inline std::ostream& operator<<(std::ostream& out,const section& sec)
+inline std::ostream& operator<<(std::ostream& out,section& sec)
 {
     out.seekp(sec._sechdr.sh_offset, std::ios::beg);
-    std::istream in((std::streambuf*)&sec._buf);
+    std::istream in(&sec._buf);
     char tmp[sec.size()];
     in.get(tmp,sec.size());
     size_t cnt = in.gcount();
