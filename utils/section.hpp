@@ -6,12 +6,13 @@
 #include <iostream>
 #include <streambuf>
 
+
 class section{
 
 private:
-    binbuf _buf;
     std::string _name;
     Elf32_Shdr _sechdr;  /* section header */
+    binbuf _buf;
 
 protected:
     
@@ -24,7 +25,7 @@ protected:
                 .sh_size = 0
                 }){}
 
-    const binbuf& buffer(){
+    binbuf& buffer(){
         
         std::ostream out(&_buf);
         //buffer must be flush before return
@@ -38,7 +39,9 @@ public:
     /*
      * create a section object using section header,basically use when reading from file
     */
-    section(const Elf32_Shdr& sechdr): _sechdr(sechdr){}
+    section(const std::string& name,const Elf32_Shdr& sechdr): _name(name),_sechdr(sechdr){}
+
+    section(section& sec) = default;
 
     const Elf32_Shdr& getHeader() const{
         return _sechdr;
@@ -71,7 +74,7 @@ public:
         return _sechdr.sh_flags;
     }
 
-    friend std::ostream& operator<<(std::ostream& out,const section& sec);
+    friend std::ostream& operator<<(std::ostream& out,section& sec);
     friend std::istream& operator>>(std::istream& in,section& sec);
 
     template <typename T>
@@ -79,13 +82,12 @@ public:
 
 };
 
-inline std::ostream& operator<<(std::ostream& out,const section& sec)
+inline std::ostream& operator<<(std::ostream& out,section& sec)
 {
     out.seekp(sec._sechdr.sh_offset, std::ios::beg);
     std::istream in((std::streambuf*)&sec._buf);
     char tmp[sec.size()];
     in.get(tmp,sec.size());
-    size_t cnt = in.gcount();
     out.write(tmp, sec.size());
     out.flush();
     return out;
@@ -96,9 +98,8 @@ inline std::ostream& operator<<(std::ostream& out,const section& sec)
 */
 inline std::istream& operator>>(std::istream& in,section& sec){
 
-    char c;
     //record current offset
-    std::streambuf::pos_type off = in.tellg();
+    // std::streambuf::pos_type off = in.tellg();
 
     in.seekg(sec._sechdr.sh_offset, std::ios::beg);
     std::ostream out(&sec._buf);
@@ -107,8 +108,17 @@ inline std::istream& operator>>(std::istream& in,section& sec){
     in.get(tmp, sec._sechdr.sh_size);
     out.write(tmp, sec._sechdr.sh_size);
 
+    //debug
+    // out.flush();
+    // std::istream secin((std::streambuf*)&sec._buf);
+    // char tmp2[sec._sechdr.sh_size];
+    // secin.seekg(0, std::ios::beg);
+    // sec._buf.info(std::cout);
+    // secin.read(tmp2, sec._sechdr.sh_size);
+    // size_t cnt = secin.gcount();
+    // sec._buf.info(std::cout);
     //resume the current offset
-    in.seekg(off);
+    // in.seekg(off);
 
     return in;
 }
@@ -117,6 +127,7 @@ template <typename T>
 inline section& operator<<(section& sec,T dat){
     std::ostream out(&sec._buf);
     out.write((const char*)&dat,sizeof(T));
+    return sec;
 }
 
 template<>

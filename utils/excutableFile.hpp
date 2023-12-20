@@ -38,11 +38,12 @@ public:
         _ehdr.e_phoff += getcuroffset();
     }
 
+    friend std::ostream &operator<<(std::ostream& output,exculate_file& exec);
     friend std::ostream &operator<<(std::ostream& output,const exculate_file& exec);
 
 };
 
-inline std::ostream &operator<<(std::ostream& output,const exculate_file& exec){
+inline std::ostream &operator<<(std::ostream& output,exculate_file& exec){
 
     output << exec.base;
     // write segment header table & segments
@@ -55,9 +56,19 @@ inline std::ostream &operator<<(std::ostream& output,const exculate_file& exec){
         output.flush();
     }
     //write each program
-    for(const segment& seg:exec.segmentUnitList){
+    for(segment& seg : exec.segmentUnitList){
         output.seekp(seg.getHeader().p_offset,std::ios::beg);
         output << seg;
     }
+
+    // for(auto it = exec.segmentUnitList.begin();it!=exec.segmentUnitList.end();++it){
+    //     output.seekp(it->getHeader().p_offset,std::ios::beg);
+    //     output << (*it);
+    // }
+
+    // for(std::vector<segment>::iterator it = exec.segmentUnitList.begin();it!=exec.segmentUnitList.end();++it){
+    //     output.seekp((*it).getHeader().p_offset,std::ios::beg);
+    //     output << (*it);
+    // }
     return output;
 }

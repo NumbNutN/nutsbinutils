@@ -47,24 +47,22 @@ int main(int argc,char* argv[]){
         relocation_file frelo;
         fin >> frelo;
         //push to relocable files vector
-        reloVec.push_back(frelo);
+        //reloVec.push_back(frelo);
+        // std::cout << frelo;
     }
 
     // <flags,vector<section>> 
-    std::vector<section> vec_a;
-    std::vector<section> vec_aw;
-    std::vector<section> vec_ax;
-    std::vector<section> vec_awx;
     std::unordered_map<Elf32_Word, std::vector<section>> map = {
-        {SHF_ALLOC,vec_a},
-        {SHF_ALLOC | SHF_WRITE,vec_aw},
-        {SHF_ALLOC | SHF_EXECINSTR,vec_ax},
-        {SHF_ALLOC | SHF_WRITE | SHF_EXECINSTR,vec_awx}
+        {SHF_ALLOC,std::vector<section>()},
+        {SHF_ALLOC | SHF_WRITE,std::vector<section>()},
+        {SHF_ALLOC | SHF_EXECINSTR,std::vector<section>()},
+        {SHF_ALLOC | SHF_WRITE | SHF_EXECINSTR,std::vector<section>()}
     };
 
     //analyse the section with same flags
-    for(relocation_file relo:reloVec){
-        for(const section& sec:relo){
+    for(relocation_file& relo:reloVec){
+        for(section& sec:relo.sectionUnitList){
+            // std::cout << sec;
             if(sec.getHeader().sh_type == SHT_PROGBITS)
                 map.at(sec.flags()).push_back(sec);
         }
@@ -82,7 +80,8 @@ int main(int argc,char* argv[]){
         segment seg(PT_LOAD,0x0,0x0,flags);
 
         //insert all the section content to segment
-        for(const section& sec:unit.second){
+        for(section& sec:unit.second){
+            // std::cout << sec;
             seg.insert(sec);
         }
 
