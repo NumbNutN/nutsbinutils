@@ -45,7 +45,7 @@ unordered_map<Mnemonic::asm_affix,uint32_t> Mnemonic::cond2Code = {
 };
 
 //create a elf object
-relocation_file reloobj;
+relocation_file reloobj(sysconf(_SC_PAGE_SIZE));
 
 int main(int argc,char** argv)
 {

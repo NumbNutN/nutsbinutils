@@ -3,6 +3,8 @@
 #include "segment.hpp"
 #include "section.hpp"
 
+#include <unistd.h>
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -34,7 +36,7 @@ int main(int argc,char* argv[]){
     out.open(outputPath,std::ios::out | std::ios::binary);
 
     //create a excutable file object
-    exculate_file exec_obj;
+    exculate_file exec_obj(sysconf(_SC_PAGE_SIZE));
 
     std::vector<relocation_file> reloVec;
     //read all the allocable file
@@ -44,7 +46,7 @@ int main(int argc,char* argv[]){
         std::ifstream fin;
         fin.open(ptr,std::ios::in | std::ios::binary);
 
-        relocation_file frelo;
+        relocation_file frelo(sysconf(_SC_PAGE_SIZE));
         fin >> frelo;
         //push to relocable files vector
         reloVec.push_back(frelo);

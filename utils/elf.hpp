@@ -10,12 +10,17 @@
 class elf{
 
 private:
-    uint32_t _poff = 0x100;
+
+    //the align requirement of architecture
+    uint32_t _align;
+    uint32_t _poff;
 
 protected:
     Elf32_Ehdr _ehdr;        /* ELF header */
 
-    elf(uint16_t etype) : 
+    elf(uint16_t etype,uint32_t align = 12) : 
+        _align(align),
+        _poff(ROUND(0,align) + (1<<align)),
         //initialize elf header
         _ehdr({
             .e_type = etype,
@@ -40,7 +45,7 @@ protected:
     
     uint32_t allocoffset(uint32_t size){
         uint32_t tmp = _poff;
-        uint32_t map_sz = MOD(size,3)?(ROUND(size,3)+(1<<3)):size;
+        uint32_t map_sz = MOD(size,_align)?(ROUND(size,_align)+(1<<_align)):size;
         _poff += map_sz;
         return tmp;
     }

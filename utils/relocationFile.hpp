@@ -26,7 +26,7 @@ public:
     //section header table
     std::vector<section> sectionUnitList;    
 
-    relocation_file() : elf(ET_REL){}
+    relocation_file(uint32_t align) : elf(ET_REL,align){}
 
     void arange(){
 

@@ -14,7 +14,7 @@ private:
     elf& base = (elf&)*this;
 public:
 
-    exculate_file() :elf(ET_EXEC){}
+    exculate_file(uint32_t align) :elf(ET_EXEC,align){}
 
     void insert(segment& seg){
 
@@ -59,6 +59,6 @@ inline std::ostream &operator<<(std::ostream& output,exculate_file& exec){
         output.seekp(seg.getHeader().p_offset,std::ios::beg);
         output << seg;
     }
-    
+
     return output;
 }
