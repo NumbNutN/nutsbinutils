@@ -18,6 +18,11 @@ void my_execve(const char* file,char* argv[],char *envp[]){
     int fd = open(file,O_RDONLY);
     assert(fd >= 0 && "file is not existed");
 
+    //print some architecture info
+    int res;
+    res = sysconf(_SC_PAGE_SIZE);
+    printf("align size require:%d\n",res);
+
     Elf32_Ehdr* h = (Elf32_Ehdr*)mmap(NULL,4096,PROT_READ,MAP_PRIVATE,fd,0);
     assert(h != MAP_FAILED);
     assert((h->e_type == ET_EXEC || h->e_type == ET_REL) && h->e_machine == EM_ARM);
