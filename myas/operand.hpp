@@ -86,6 +86,7 @@ private:
             {
                 immed = res;
                 rotate = i / 2;
+                return;
             }
         }
     }
