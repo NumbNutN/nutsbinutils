@@ -39,8 +39,6 @@ protected:
         return c;
     }
 
-    //implemention do not have definition lead to link error
-
     virtual int_type underflow() override {
 
         std::cout << "underflow count " << ++underflowCnt << std::endl;
@@ -58,45 +56,49 @@ protected:
         return this;
     }
 
+    //should be override by derived class
+    //set the pointers refered the relative position and return a absolute position
     virtual pos_type
-      seekoff(off_type off, std::ios::seekdir way,
-	      std::ios::openmode mode/*__mode*/ = std::ios::in | std::ios::out) override{
+      seekoff(off_type off, std::ios_base::seekdir way,
+	      std::ios_base::openmode mode/*__mode*/ = std::ios_base::in | std::ios_base::out) override{
         
         //the base address
         char_type* ptr;
         //the absolute position
         pos_type pos;
 
-        if(way == std::ios::beg){
+        if(way == std::ios_base::beg){
             ptr = buf;
             pos = off;
         }
-        if(way == std::ios::end){
+        if(way == std::ios_base::end){
             ptr = pptr();
             pos = (pptr() - buf) + off;
         }
-        if((way == std::ios::cur) && (mode & std::ios::in) == std::ios::in){
+        if((way == std::ios_base::cur) && (mode & std::ios_base::in) == std::ios_base::in){
             ptr = gptr();
             pos = (gptr() - buf) + off;
         }
-        if((way == std::ios::cur) && (mode & std::ios::out) == std::ios::out){
+        if((way == std::ios_base::cur) && (mode & std::ios_base::out) == std::ios_base::out){
             ptr = pptr();
             pos = (pptr() - buf) + off;
         }
 
         if(buf + pos >= pptr())return (pos_type)-1;
-        if((mode & std::ios::in) == std::ios::in){
+        if((mode & std::ios_base::in) == std::ios_base::in){
             setg(eback(),ptr+off,egptr());
         }
-        if((mode & std::ios::out) == std::ios::out){
+        if((mode & std::ios_base::out) == std::ios_base::out){
             setp(ptr+off,epptr());
         }
         return pos;
     }
 
+    //should be override by derived class
+    //set the pointers refered the absolute position
     virtual pos_type
-      seekpos(pos_type off, std::ios::openmode mode/*__mode*/ = std::ios::in | std::ios::out) override{
-        return seekoff(off, std::ios::beg,mode);
+      seekpos(pos_type off, std::ios_base::openmode mode/*__mode*/ = std::ios_base::in | std::ios_base::out) override{
+        return seekoff(off, std::ios_base::beg,mode);
     }
 
 public:
@@ -106,11 +108,8 @@ public:
         setbuf(buf,_size);
     }
 
-    // template <std::streambuf& streambuf>
-    // concept flushed_streambuf = streambuf.pbase() == streambuf.pptr();
-
-    binbuf(binbuf& obj):std::streambuf(obj){
-        //binbuf should be flush before copy constructor
+    binbuf(const binbuf& obj):std::streambuf(obj){
+        //flush before buffer copy
         std::ostream out((std::streambuf*)&obj);
         out.flush();
         _size = obj._size;

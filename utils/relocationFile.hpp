@@ -60,7 +60,6 @@ public:
     }
 
     friend std::ostream &operator<<(std::ostream& output,relocation_file &relo);
-    friend std::ostream &operator<<(std::ostream& output,const relocation_file &relo);
     friend std::istream &operator>>(std::istream& input,relocation_file &relo);
 
 public:
@@ -114,6 +113,7 @@ inline std::istream &operator>>(std::istream& input,relocation_file &relo){
     input.seekg(shoff + relo._ehdr.e_shstrndx * sizeof(Elf32_Shdr), std::ios::beg);
     input.read((char*)&shstrtblhdr, sizeof(Elf32_Shdr));
     strtbl shstrtbl(shstrtblhdr);
+    input.seekg(shstrtblhdr.sh_offset);
     input >> shstrtbl;
 
     for(int i=0;i<relo._ehdr.e_shnum;++i){
@@ -125,7 +125,7 @@ inline std::istream &operator>>(std::istream& input,relocation_file &relo){
 
         //read the section header
         input.seekg(relo._ehdr.e_shoff + i*sizeof(Elf32_Shdr), std::ios::beg);
-        input.get((char*)&shdr, sizeof(Elf32_Shdr));
+        input.read((char*)&shdr, sizeof(Elf32_Shdr));
 
         //read the name of section
         std::string name = shstrtbl.getName(shdr.sh_name);
@@ -134,11 +134,12 @@ inline std::istream &operator>>(std::istream& input,relocation_file &relo){
         section sec(name,shdr);
 
         //read the section content
+        input.seekg(shdr.sh_offset);
         input >> sec;
         relo.sectionUnitList.push_back(sec);
-
-
     }
     //all done 
     return input;
 }
+
+

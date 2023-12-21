@@ -39,7 +39,6 @@ public:
     }
 
     friend std::ostream &operator<<(std::ostream& output,exculate_file& exec);
-    friend std::ostream &operator<<(std::ostream& output,const exculate_file& exec);
 
 };
 
@@ -56,7 +55,7 @@ inline std::ostream &operator<<(std::ostream& output,exculate_file& exec){
         output.flush();
     }
     //write each program
-    for(segment& seg : exec.segmentUnitList){
+    for(segment& seg:exec.segmentUnitList){
         output.seekp(seg.getHeader().p_offset,std::ios::beg);
         output << seg;
     }

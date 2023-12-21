@@ -81,7 +81,6 @@ int main(int argc,char* argv[]){
 
         //insert all the section content to segment
         for(section& sec:unit.second){
-            // std::cout << sec;
             seg.insert(sec);
         }
 

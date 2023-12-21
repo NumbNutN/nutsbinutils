@@ -38,10 +38,9 @@ public:
 
     /*
      * create a section object using section header,basically use when reading from file
+     * name is required when construct from a relocatable file
     */
     section(const std::string& name,const Elf32_Shdr& sechdr): _name(name),_sechdr(sechdr){}
-
-    section(section& sec) = default;
 
     const Elf32_Shdr& getHeader() const{
         return _sechdr;
@@ -82,12 +81,12 @@ public:
 
 };
 
+// now section operator<< has no right to set put area offset
 inline std::ostream& operator<<(std::ostream& out,section& sec)
 {
-    out.seekp(sec._sechdr.sh_offset, std::ios::beg);
-    std::istream in((std::streambuf*)&sec._buf);
+    std::istream in(&sec._buf);
     char tmp[sec.size()];
-    in.get(tmp,sec.size());
+    in.read(tmp,sec.size());
     out.write(tmp, sec.size());
     out.flush();
     return out;
@@ -98,27 +97,10 @@ inline std::ostream& operator<<(std::ostream& out,section& sec)
 */
 inline std::istream& operator>>(std::istream& in,section& sec){
 
-    //record current offset
-    // std::streambuf::pos_type off = in.tellg();
-
-    in.seekg(sec._sechdr.sh_offset, std::ios::beg);
     std::ostream out(&sec._buf);
-
     char tmp[sec._sechdr.sh_size];
-    in.get(tmp, sec._sechdr.sh_size);
+    in.read(tmp, sec._sechdr.sh_size);
     out.write(tmp, sec._sechdr.sh_size);
-
-    //debug
-    // out.flush();
-    // std::istream secin((std::streambuf*)&sec._buf);
-    // char tmp2[sec._sechdr.sh_size];
-    // secin.seekg(0, std::ios::beg);
-    // sec._buf.info(std::cout);
-    // secin.read(tmp2, sec._sechdr.sh_size);
-    // size_t cnt = secin.gcount();
-    // sec._buf.info(std::cout);
-    //resume the current offset
-    // in.seekg(off);
 
     return in;
 }

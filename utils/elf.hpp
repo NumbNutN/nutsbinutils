@@ -72,6 +72,6 @@ inline std::istream &operator>>(std::istream& input,elf& elfobj){
     //read elf header
     //elf header always on the offset 0x0
     input.seekg(0x0, std::ios::beg);
-    input.get((char*)&elfobj._ehdr, sizeof(Elf32_Ehdr));
+    input.read((char*)&elfobj._ehdr, sizeof(Elf32_Ehdr));
     return input;
 }
