@@ -27,7 +27,7 @@ public:
                .p_paddr = paddr,
                .p_flags = flags}) {}
 
-    segment(segment& seg) = default;
+    // segment(segment& seg) = default;
 
     const binbuf &buffer() {
         std::ostream out(&_buf);
