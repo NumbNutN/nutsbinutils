@@ -47,8 +47,7 @@ int main(int argc,char* argv[]){
         relocation_file frelo;
         fin >> frelo;
         //push to relocable files vector
-        //reloVec.push_back(frelo);
-        // std::cout << frelo;
+        reloVec.push_back(frelo);
     }
 
     // <flags,vector<section>> 
@@ -62,7 +61,6 @@ int main(int argc,char* argv[]){
     //analyse the section with same flags
     for(relocation_file& relo:reloVec){
         for(section& sec:relo.sectionUnitList){
-            // std::cout << sec;
             if(sec.getHeader().sh_type == SHT_PROGBITS)
                 map.at(sec.flags()).push_back(sec);
         }

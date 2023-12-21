@@ -59,15 +59,6 @@ inline std::ostream &operator<<(std::ostream& output,exculate_file& exec){
         output.seekp(seg.getHeader().p_offset,std::ios::beg);
         output << seg;
     }
-
-    // for(auto it = exec.segmentUnitList.begin();it!=exec.segmentUnitList.end();++it){
-    //     output.seekp(it->getHeader().p_offset,std::ios::beg);
-    //     output << (*it);
-    // }
-
-    // for(std::vector<segment>::iterator it = exec.segmentUnitList.begin();it!=exec.segmentUnitList.end();++it){
-    //     output.seekp((*it).getHeader().p_offset,std::ios::beg);
-    //     output << (*it);
-    // }
+    
     return output;
 }

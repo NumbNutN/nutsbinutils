@@ -119,20 +119,10 @@ public:
         setp(buf + (obj.pptr() - obj.buf),buf +_size);
     }
 
-    size_t length() const{
-        size_t pa_size = pptr() - buf;
-        size_t ga_size = gptr() - eback();
-        return pa_size - ga_size;
-    }
-
     void info(std::ostream& out){
         out << std::hex << "buffer base " << (uint64_t)buf << std::endl;
         out << std::hex << "pbegin " << (uint64_t)pbase() << " pnext " << (uint64_t)pptr() << " pend " << (uint64_t)epptr() << std::endl;
         out << std::hex << "gbegin " << (uint64_t)eback() << " gnext " << (uint64_t)gptr() << " gend " << (uint64_t)egptr() << std::endl;
-    }
-
-    void* getBase(){
-        return buf;
     }
 
     virtual ~binbuf() {
