@@ -98,7 +98,7 @@ inline std::istream& operator>>(std::istream& in,section& sec){
 
     std::ostream out(&sec._buf);
     char tmp[sec._sechdr.sh_size];
-    in.get(tmp, sec._sechdr.sh_size);
+    in.read(tmp, sec._sechdr.sh_size);
     out.write(tmp, sec._sechdr.sh_size);
 
     return in;

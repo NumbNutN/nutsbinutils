@@ -126,7 +126,7 @@ inline std::istream &operator>>(std::istream& input,relocation_file &relo){
 
         //read the section header
         input.seekg(relo._ehdr.e_shoff + i*sizeof(Elf32_Shdr), std::ios::beg);
-        input.get((char*)&shdr, sizeof(Elf32_Shdr));
+        input.read((char*)&shdr, sizeof(Elf32_Shdr));
 
         //read the name of section
         std::string name = shstrtbl.getName(shdr.sh_name);
