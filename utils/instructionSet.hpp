@@ -17,6 +17,9 @@ private:
 
 protected:
 
+    //symbol set
+    std::unordered_map<std::string, uint32_t> symSet;
+
     section& base = (section&)*this;
 
 public:
@@ -44,4 +47,14 @@ public:
         base << obj;
         size() += obj.size();
     }
+
+    //insert a symbol
+    void insert(const std::string& str){
+        symSet[str] = size();
+    }
+
+    uint32_t getSymbolOff(const std::string& str){
+        return symSet[str];
+    }
+    
 };

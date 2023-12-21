@@ -86,6 +86,8 @@ extern InstructionSet* curInstructionSet;
 
 %token <string_literal> STRING_LITERAL /* 字符串字面量 */
 
+%token <string_literal> SYMBOL      /* 符号 */
+
 //directives
 %token <nullptr> DOT_WORD_NAME
 %token <nullptr> DOT_ZERO_NAME
@@ -134,6 +136,8 @@ INSTRUCTION_SET
     | INSTRUCTION_SET DOT_ZERO                  {$1->insert(*$2);$$ = $1;}
     | INSTRUCTION_SET DOT_STRING                {$1->insert(*$2);$$ = $1;}
     | INSTRUCTION_SET DOT_ALIGN                 {$1->insert(*$2);$$ = $1;}
+
+    | INSTRUCTION_SET SYMBOL                    {$1->insert(std::string($2));$$ = $1;}
 
     // a section without explict statement ".section" is not allow
     | DOT_SECTION_NAME                          {
