@@ -1,6 +1,7 @@
 #pragma once
 
 #include "binbuf.hpp"
+#include "directive.hpp"
 
 #include <elf.h>
 #include <iostream>
@@ -118,4 +119,10 @@ inline section& operator<<(section& sec,std::string dat){
     out << dat;
     char c = '\0';
     out.write(&c,sizeof(char));
+}
+
+template<directive_type type>
+inline section& operator<<(section& sec,directive<type> directive){
+    std::ostream out(&sec._buf);
+    out << directive;
 }

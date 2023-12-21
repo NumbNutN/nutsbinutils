@@ -6,6 +6,7 @@
 
 #include "binbuf.hpp"
 #include "instruction.hpp"
+#include "directive.hpp"
 #include "section.hpp"
 
 class InstructionSet : public section{
@@ -38,14 +39,9 @@ public:
         section::size() += sizeof(uint32_t);
     }
 
-    //return the machine code memory space address
-    // const binbuf& content(){
-        
-    //     std::ostream out(&buf);
-    //     //buffer must be flush before return
-    //     //else it will get problem when copy
-    //     out.flush();
-    //     return buf;
-    // }
-    
+    template <directive_type type>
+    void insert(const directive<type>& obj){
+        base << obj;
+        size() += obj.size();
+    }    
 };

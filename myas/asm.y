@@ -33,6 +33,7 @@ void yyerror(char *s, ...) // 变长参数错误处理函数
 extern "C" int yylex();
 
 extern relocation_file reloobj;
+extern InstructionSet* curInstructionSet;
 
 %}
 
@@ -48,6 +49,7 @@ extern relocation_file reloobj;
 
     Register reg;     /* 寄存器 */
     uint32_t immd;             /* 立即数常量 */
+    char* string_literal;       /* 字符串字面量 */
 
     //非终结符
     InstructionSet* insSet; /* 指令集 */
@@ -58,6 +60,11 @@ extern relocation_file reloobj;
     Operand<Ra>* ra;
     Operand<Op2>* op2;
     Operand<Off>* off;
+    
+    directive<WORD>* dot_word;
+    directive<ZERO>* dot_zero;
+    directive<ALIGN>* dot_align;
+    directive<STRING>* dot_string;
     
 }
 
@@ -76,6 +83,20 @@ extern relocation_file reloobj;
 %token <immd> IMMEDIATE             /* 立即数 */
 
 %token <reg> FIELD_REGISTER   /* 寄存器 */
+
+%token <string_literal> STRING_LITERAL /* 字符串字面量 */
+
+//directives
+%token <nullptr> DOT_WORD_NAME
+%token <nullptr> DOT_ZERO_NAME
+%token <nullptr> DOT_STRING_NAME
+%token <nullptr> DOT_ALIGN_NAME
+%token <nullptr> DOT_SECTION_NAME
+
+%type <dot_word> DOT_WORD
+%type <dot_zero> DOT_ZERO
+%type <dot_string> DOT_STRING
+%type <dot_align> DOT_ALIGN
 
 %type <mnemonic> MNEMONIC           /* 指令助记符 */
 
@@ -106,17 +127,19 @@ INSTRUCTION_SET
         //counter new instruction, insert
         $1->insert(*$2);
         $$ = $1;
-
         cout << bitset<32>($2->encode()) << endl;
     }
 
-    | INSTRUCTION                               {
-        //first instruction counter
+    | INSTRUCTION_SET DOT_WORD                  {$1->insert($2);$$ = $1;}
+    | INSTRUCTION_SET DOT_ZERO                  {$1->insert($2);$$ = $1;}
+    | INSTRUCTION_SET DOT_STRING                {$1->insert($2);$$ = $1;}
+    | INSTRUCTION_SET DOT_ALIGN                 {$1->insert($2);$$ = $1;}
+
+    // a section without explict statement ".section" is not allow
+    | DOT_SECTION_NAME                          {
         //create a instruction set object
         $$ = new InstructionSet();
-        $$->insert(*$1);
-        
-        cout << bitset<32>($1->encode()) << endl;
+        curInstructionSet = $$;
     }
 
 INSTRUCTION
@@ -188,5 +211,20 @@ OFFSET
     : RM    {$$ = new Operand<Off>($1);}
     | '-' RM    {$$ = new Operand<Off>($2,0,Operand<Off>::DOWN);}
     | '#' IMMEDIATE {$$ = new Operand<Off>($2);}
+
+DOT_WORD
+    : DOT_WORD_NAME IMMEDIATE   {$$ = new directive<WORD>($2);}
+
+DOT_ZERO
+    : DOT_ZERO_NAME IMMEDIATE   {$$ = new directive<ZERO>($2);}
+
+DOT_STRING
+    : DOT_STRING_NAME STRING_LITERAL    {$$ = new directive<STRING>(std::string($2));}
+
+DOT_ALIGN
+    : DOT_ALIGN_NAME IMMEDIATE          {
+        //get the current position
+        $$ = new directive<ALIGN>($2,curInstructionSet->size());
+    }
 
 %%

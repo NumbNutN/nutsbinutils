@@ -17,6 +17,7 @@ extern "C"{
 
 %option outfile="scanner.c" header="scanner.h"
 
+
 ADD "add"|"ADD"
 SUB "sub"|"SUB"
 MUL "mul"|"MUL"
@@ -40,6 +41,8 @@ Word "W"|"w"
 SetCondition "S"|"s"
 
 IMMEDIATE "-"?[0-9]+
+
+STRING_LITERAL [a-zA-Z_]+
 
 
 R0  [rR]0
@@ -95,6 +98,13 @@ R11 [rR]11
 
 {IMMEDIATE} {yylval.immd = atoi(yytext); return IMMEDIATE;}
 
+".section"  {return DOT_SECTION_NAME;}
+".word"     {return DOT_WORD_NAME;}
+".string"   {return DOT_STRING_NAME;}
+".zero"     {return DOT_ZERO_NAME;}
+".align"    {return DOT_ALIGN_NAME;}
+
+{STRING_LITERAL}    {return yytext;}
 
 [!#\-,\[\]]    {return *yytext;}
 [\n \t]     {}

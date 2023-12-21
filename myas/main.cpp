@@ -47,6 +47,9 @@ unordered_map<Mnemonic::asm_affix,uint32_t> Mnemonic::cond2Code = {
 //create a elf object
 relocation_file reloobj;
 
+//current instruction set address, use in lexical parser
+InstructionSet* curInstructionSet;
+
 int main(int argc,char** argv)
 {
 
