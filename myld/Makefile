@@ -39,7 +39,8 @@ C_SOURCES =
 
 
 CPP_SOURCES = \
-main.cpp
+main.cpp \
+../utils/utils.cpp
 
 #######################################
 # binaries

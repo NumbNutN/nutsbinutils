@@ -26,12 +26,12 @@ public:
     //section header table
     std::vector<section> sectionUnitList;    
 
-    relocation_file(uint32_t align) : elf(ET_REL,align){}
+    relocation_file() : elf(ET_REL){}
 
     void arange(){
 
         //insert a section string table
-        uint32_t off = allocoffset(shstrtbl.size());
+        uint32_t off = allocoffset(shstrtbl.size(),3);
         shstrtbl.setOffset(off);
 
         //the section string table idx
@@ -46,7 +46,7 @@ public:
     void insert(section& sec){
         
         //select a new offset
-        uint32_t offset = allocoffset(sec.size());
+        uint32_t offset = allocoffset(sec.size(),3);
         sec.setOffset(offset);
 
         //also insert the section name to shstrtbl

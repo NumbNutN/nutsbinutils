@@ -21,11 +21,12 @@ private:
     std::vector<section> sectionUnitList;
 public:
 
-  segment(Elf32_Word type, Elf32_Addr vaddr, Elf32_Addr paddr, Elf32_Word flags)
+  segment(Elf32_Word type, Elf32_Addr vaddr, Elf32_Addr paddr, Elf32_Word flags, Elf32_Word align)
       : _phdr({.p_type = type,
                .p_vaddr = vaddr,
                .p_paddr = paddr,
-               .p_flags = flags}) {}
+               .p_flags = flags,
+               .p_align =  align}) {}
 
     // segment(segment& seg) = default;
 

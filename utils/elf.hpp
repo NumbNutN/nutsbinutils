@@ -12,15 +12,12 @@ class elf{
 private:
 
     //the align requirement of architecture
-    uint32_t _align;
-    uint32_t _poff;
+    uint32_t _poff = sizeof(Elf32_Ehdr);
 
 protected:
     Elf32_Ehdr _ehdr;        /* ELF header */
 
-    elf(uint16_t etype,uint32_t align = 12) : 
-        _align(align),
-        _poff(ROUND(0,align) + (1<<align)),
+    elf(uint16_t etype) : 
         //initialize elf header
         _ehdr({
             .e_type = etype,
@@ -43,10 +40,15 @@ protected:
         memcpy(_ehdr.e_ident,magic,sizeof(magic));
     }
     
-    uint32_t allocoffset(uint32_t size){
+    uint32_t allocoffset(uint32_t size,uint32_t align){
+        //first check if _off is align
+        _poff = MOD(_poff,align)?(ROUND(_poff,align)+(1<<align)):_poff;
+
+        //align the request mem size
         uint32_t tmp = _poff;
-        uint32_t map_sz = MOD(size,_align)?(ROUND(size,_align)+(1<<_align)):size;
+        uint32_t map_sz = MOD(size,align)?(ROUND(size,align)+(1<<align)):size;
         _poff += map_sz;
+        
         return tmp;
     }
 

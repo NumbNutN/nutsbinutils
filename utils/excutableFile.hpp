@@ -9,17 +9,18 @@ class exculate_file : public elf{
 
 private:
 
+    uint32_t _palign;
+    elf& base = (elf&)*this;
     std::vector<segment> segmentUnitList; /* segement header table */
 
-    elf& base = (elf&)*this;
 public:
 
-    exculate_file(uint32_t align) :elf(ET_EXEC,align){}
+    exculate_file(uint32_t align) :elf(ET_EXEC),_palign(align){}
 
     void insert(segment& seg){
 
         //select a new offset
-        uint32_t off = allocoffset(seg.size());
+        uint32_t off = allocoffset(seg.size(),_palign);
         seg.setOffset(off);
 
         //push to program table
