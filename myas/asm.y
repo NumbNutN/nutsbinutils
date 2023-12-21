@@ -130,10 +130,10 @@ INSTRUCTION_SET
         cout << bitset<32>($2->encode()) << endl;
     }
 
-    | INSTRUCTION_SET DOT_WORD                  {$1->insert($2);$$ = $1;}
-    | INSTRUCTION_SET DOT_ZERO                  {$1->insert($2);$$ = $1;}
-    | INSTRUCTION_SET DOT_STRING                {$1->insert($2);$$ = $1;}
-    | INSTRUCTION_SET DOT_ALIGN                 {$1->insert($2);$$ = $1;}
+    | INSTRUCTION_SET DOT_WORD                  {$1->insert(*$2);$$ = $1;}
+    | INSTRUCTION_SET DOT_ZERO                  {$1->insert(*$2);$$ = $1;}
+    | INSTRUCTION_SET DOT_STRING                {$1->insert(*$2);$$ = $1;}
+    | INSTRUCTION_SET DOT_ALIGN                 {$1->insert(*$2);$$ = $1;}
 
     // a section without explict statement ".section" is not allow
     | DOT_SECTION_NAME                          {
@@ -192,13 +192,13 @@ MNEMONIC
     | FIELD_OPCODE FIELD_WORDLENGTH {$$ = new Mnemonic($1,$2);std::cout << *(Mnemonic*)$$ << std::endl;}
 
 RA
-    : FIELD_REGISTER  {$$ = new Operand<Ra>($1);}
+    : FIELD_REGISTER  {$$ = new Operand<Ra>($1);std::cout << *$$;}
 
 RD
-    : FIELD_REGISTER  {$$ = new Operand<Rd>($1);}
+    : FIELD_REGISTER  {$$ = new Operand<Rd>($1);std::cout << *$$;}
 
 RN
-    : FIELD_REGISTER  {$$ = new Operand<Rn>($1);}
+    : FIELD_REGISTER  {$$ = new Operand<Rn>($1);std::cout << *$$;}
 
 RM 
     : FIELD_REGISTER  {$$ = $1;}
@@ -219,7 +219,7 @@ DOT_ZERO
     : DOT_ZERO_NAME IMMEDIATE   {$$ = new directive<ZERO>($2);}
 
 DOT_STRING
-    : DOT_STRING_NAME STRING_LITERAL    {$$ = new directive<STRING>(std::string($2));}
+    : DOT_STRING_NAME STRING_LITERAL     {$$ = new directive<STRING>(std::string($2));}
 
 DOT_ALIGN
     : DOT_ALIGN_NAME IMMEDIATE          {

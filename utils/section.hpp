@@ -80,6 +80,13 @@ public:
     template <typename T>
     friend section& operator<<(section& sec,T dat);
 
+    // friend section& operator<<(section& sec,uint32_t dat);
+
+    // friend section& operator<<(section& sec,std::string& dat);
+
+    template<directive_type type>
+    friend section& operator<<(section& sec,directive<type>& directive);
+
 };
 
 // now section operator<< has no right to set put area offset
@@ -113,16 +120,24 @@ inline section& operator<<(section& sec,T dat){
     return sec;
 }
 
+// inline section& operator<<(section& sec,uint32_t dat){
+//     std::ostream out(&sec._buf);
+//     out.write((const char*)&dat,sizeof(uint32_t));
+//     return sec;
+// }
+
 template<>
-inline section& operator<<(section& sec,std::string dat){
+inline section& operator<<(section& sec,std::string& dat){
     std::ostream out(&sec._buf);
     out << dat;
     char c = '\0';
     out.write(&c,sizeof(char));
+    return sec;
 }
 
 template<directive_type type>
-inline section& operator<<(section& sec,directive<type> directive){
+inline section& operator<<(section& sec,directive<type>& directive){
     std::ostream out(&sec._buf);
     out << directive;
+    return sec;
 }

@@ -42,7 +42,7 @@ SetCondition "S"|"s"
 
 IMMEDIATE "-"?[0-9]+
 
-STRING_LITERAL [a-zA-Z_]+
+STRING_LITERAL \"[a-zA-Z_ ]+\"
 
 
 R0  [rR]0
@@ -104,7 +104,13 @@ R11 [rR]11
 ".zero"     {return DOT_ZERO_NAME;}
 ".align"    {return DOT_ALIGN_NAME;}
 
-{STRING_LITERAL}    {return yytext;}
+{STRING_LITERAL}    {
+    size_t len = strlen(yytext);
+    yytext[len - 1] = '\0';
+    yytext[0] = '\0';
+    yylval.string_literal = (char*)yytext+1;
+    return STRING_LITERAL;
+}
 
 [!#\-,\[\]]    {return *yytext;}
 [\n \t]     {}

@@ -104,7 +104,8 @@ public:
     //Constructor for offset
     Operand(Register reg,unsigned shift,UpDown upDown);
 
-    friend ostream& operator<<(ostream& out,const Operand& op);
+    template<RegType type2>
+    friend ostream& operator<<(ostream& out,const Operand<type2>& op);
 
     uint32_t encode(){
         /* type == Rn or Rd or Rm */

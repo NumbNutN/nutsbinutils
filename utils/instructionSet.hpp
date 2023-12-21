@@ -40,8 +40,8 @@ public:
     }
 
     template <directive_type type>
-    void insert(const directive<type>& obj){
+    void insert(directive<type>& obj){
         base << obj;
         size() += obj.size();
-    }    
+    }
 };
