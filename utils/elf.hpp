@@ -12,7 +12,7 @@ class elf{
 private:
 
     //the align requirement of architecture
-    uint32_t _poff = sizeof(Elf32_Ehdr);
+    uint32_t _poff = MOD(sizeof(Elf32_Ehdr),5)?ROUND(sizeof(Elf32_Ehdr),5)+(1<<5):sizeof(Elf32_Ehdr);
 
 protected:
     Elf32_Ehdr _ehdr;        /* ELF header */
@@ -48,7 +48,7 @@ protected:
         uint32_t tmp = _poff;
         uint32_t map_sz = MOD(size,align)?(ROUND(size,align)+(1<<align)):size;
         _poff += map_sz;
-        
+
         return tmp;
     }
 

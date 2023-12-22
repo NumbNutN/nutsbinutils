@@ -78,6 +78,7 @@ public:
         //create a literal pool, below the section
         uint32_t curLiteralPoolPos = size();
 
+        std::ostream out(&buffer());
         //for each incomplete instruction, find if symbol is defined within one section
         for(std::vector<reloIns_type>::iterator it = reloInsSet.begin();it!=reloInsSet.end();){
             //get the symbol need to be addressed
@@ -94,9 +95,9 @@ public:
                 uint32_t symPos = symSet[sym];
 
                 //write the absolute address into literal pool
-                std::ostream out(&buffer());
-                out.seekp(curLiteralPoolPos);
-                base << symPos;
+                out.seekp(curLiteralPoolPos,std::ios::beg);
+                out.write((char*)&symPos,sizeof(uint32_t));
+
                 //in armv7 architecture, PC should be fixed by mines 8
                 Operand<Off> off(curLiteralPoolPos - insPos - 8);
                 curLiteralPoolPos += 4;
@@ -104,9 +105,10 @@ public:
                 //reconstructor a complete one, and remove the incomplete one
                 incomplete_ins.setOff(off);
                 //write the new complete instruction into buffer
-                out.seekp(insPos);
-                base << incomplete_ins;
-                
+                out.seekp(insPos,std::ios::beg);
+                uint32_t code = incomplete_ins.encode();
+                out.write((char*)&code,sizeof(uint32_t));
+
                 //now delete the incomplete instruction
                 it = reloInsSet.erase(it);
             }
@@ -115,6 +117,7 @@ public:
             }
 
         }
+        out.flush();
     }
     
 };
