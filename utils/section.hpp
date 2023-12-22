@@ -26,15 +26,6 @@ protected:
                 .sh_size = 0
                 }){}
 
-    binbuf& buffer(){
-        
-        std::ostream out(&_buf);
-        //buffer must be flush before return
-        //else it will get problem when copy
-        out.flush();
-        return _buf;
-    }
-
 public:
 
     /*
@@ -60,6 +51,15 @@ public:
     */
     uint32_t& size(){
         return _sechdr.sh_size;
+    }
+
+    binbuf& buffer(){
+    
+        std::ostream out(&_buf);
+        //buffer must be flush before return
+        //else it will get problem when copy
+        out.flush();
+        return _buf;
     }
 
     void setNameIdx(uint32_t idx){

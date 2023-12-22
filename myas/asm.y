@@ -131,6 +131,8 @@ TEXT
         //instruction set over
         //add the section
         reloobj.insert(*$1);
+        std::cout << $1->buffer();
+        std::cout << reloobj.sectionUnitList[0].buffer();
     }
 
 INSTRUCTION_SET
@@ -138,7 +140,7 @@ INSTRUCTION_SET
         //counter new instruction, insert
         $1->insert(*$2);
         $$ = $1;
-        cout << bitset<32>($2->encode()) << endl;
+        // cout << bitset<32>($2->encode()) << endl;
     }
 
     | INSTRUCTION_SET INSTRUCTION_RELO          {
@@ -222,13 +224,13 @@ MNEMONIC
     | FIELD_OPCODE FIELD_WORDLENGTH {$$ = new Mnemonic($1,$2);std::cout << *(Mnemonic*)$$ << std::endl;}
 
 RA
-    : FIELD_REGISTER  {$$ = new Operand<Ra>($1);std::cout << *$$;}
+    : FIELD_REGISTER  {$$ = new Operand<Ra>($1);}
 
 RD
-    : FIELD_REGISTER  {$$ = new Operand<Rd>($1);std::cout << *$$;}
+    : FIELD_REGISTER  {$$ = new Operand<Rd>($1);}
 
 RN
-    : FIELD_REGISTER  {$$ = new Operand<Rn>($1);std::cout << *$$;}
+    : FIELD_REGISTER  {$$ = new Operand<Rn>($1);}
 
 RM 
     : FIELD_REGISTER  {$$ = $1;}

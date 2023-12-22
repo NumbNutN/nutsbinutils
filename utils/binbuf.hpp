@@ -31,7 +31,7 @@ private:
 
 protected:
     virtual int_type overflow(int_type c) override{
-        std::cout << "overflow count " << ++overflowCnt << std::endl;
+        //std::cout << "overflow count " << ++overflowCnt << std::endl;
         if(_size >= _maxSize)return traits_type::eof();
 
         //reallocate a larger array
@@ -59,7 +59,7 @@ protected:
 
     virtual int_type underflow() override {
 
-        std::cout << "underflow count " << ++underflowCnt << std::endl;
+        //std::cout << "underflow count " << ++underflowCnt << std::endl;
 
         //the end() marks the EOF
         if(gptr() == end())return traits_type::eof();
@@ -141,6 +141,8 @@ public:
         out.flush();
         _size = obj._size;
         buf = (char_type*)malloc(_size);
+        //set the _end mark
+        _end = obj._end - obj.buf + buf;
         memcpy(buf,obj.buf,_size);
         setg(buf, buf + (obj.gptr() - obj.buf), buf + (obj.egptr() - obj.buf));
         setp(buf + (obj.pptr() - obj.buf),buf +_size);
@@ -152,6 +154,28 @@ public:
         out << std::hex << "pbegin " << (uint64_t)pbase() << " pnext " << (uint64_t)pptr() << " pend " << (uint64_t)epptr() << std::endl;
         out << std::hex << "gbegin " << (uint64_t)eback() << " gnext " << (uint64_t)gptr() << " gend " << (uint64_t)egptr() << std::endl;
         std::cout << std::endl;
+    }
+
+    void content(std::ostream& out){
+        char* p;
+        const size_t showPerLine = 16;
+        out << "\033[32mbinary buffer content(in hex)" << std::endl;
+        //write the list
+        for(int i=0;i<showPerLine;++i){
+            out << std::hex <<std::setfill('0') << std::setw(2) << i;
+            if((i + 1) == showPerLine)out << std::endl;
+            else out << ' ';
+        }
+
+        //start from the gbase
+        for(p = eback();p!= end();++p){
+            char dat = *p;
+            out << std::hex << std::setfill('0') << std::setw(2)<< (((uint32_t)dat) & 0xFF);
+            if((p - eback() + 1)%showPerLine)out << ' ';
+            else out << std::endl;
+        }
+        if((p - eback())%showPerLine)out << std::endl;
+        out << std::endl;
     }
 
     virtual ~binbuf() {
@@ -166,24 +190,7 @@ public:
  * only used for debug 
 */
 inline std::ostream& operator<<(std::ostream& out,binbuf& buf){
-
-    const size_t showPerLine = 16;
-    std::cout << "\033[32mbinary buffer content(in hex)" << std::endl;
-    //write the list
-    for(int i=0;i<showPerLine;++i){
-        std::cout << std::hex <<std::setfill('0') << std::setw(2) << i;
-        if((i + 1) == showPerLine)std::cout << std::endl;
-        else std::cout << ' ';
-    }
-
-    //start from the gbase
-    for(char* p = buf.eback();p!= buf.end();++p){
-        char dat = *p;
-        std::cout << std::hex << std::setfill('0') << std::setw(2)<< (((uint32_t)dat) & 0xFF);
-        if((p - buf.eback() + 1)%showPerLine)std::cout << ' ';
-        else std::cout << std::endl;
-    }
-    std::cout << std::endl;
-
+    buf.info(out);
+    buf.content(out);
     return out;
 }
