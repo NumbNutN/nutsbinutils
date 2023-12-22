@@ -107,6 +107,9 @@ public:
                 //now delete the incomplete instruction
                 it = reloInsSet.erase(it);
             }
+            else{
+                it++;
+            }
 
         }
     }

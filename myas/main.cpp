@@ -50,6 +50,9 @@ relocation_file reloobj;
 //current instruction set address, use in lexical parser
 InstructionSet* curInstructionSet;
 
+//current recorded symbol that in a LDR instruction
+char* curSymbol;
+
 int main(int argc,char** argv)
 {
 

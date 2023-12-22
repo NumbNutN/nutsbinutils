@@ -34,6 +34,7 @@ extern "C" int yylex();
 
 extern relocation_file reloobj;
 extern InstructionSet* curInstructionSet;
+extern char* curSymbol;
 
 %}
 
@@ -143,7 +144,7 @@ INSTRUCTION_SET
     | INSTRUCTION_SET INSTRUCTION_RELO          {
         //if a imcomplete instruction could be filled in a single file
         //it should change to a complete instruction before insert into relocable file
-        $1->insert(*$2);
+        $1->insert(*$2,curSymbol);
         $$ = $1;
     }
 
@@ -207,6 +208,8 @@ INSTRUCTION_RELO
         //record the incomplete instruction need to be identified later
         Operand<Rn> pc(PC);
         $$ = new Instruction<INCOMPLETE_INS>(*$1,*$2,pc,Instruction<INCOMPLETE_INS>::PRE,Instruction<INCOMPLETE_INS>::NOWRITEBACK);
+        //record the name dirty
+        curSymbol = $5;
     }
 
 

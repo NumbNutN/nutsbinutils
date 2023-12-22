@@ -37,7 +37,8 @@ private:
     uint32_t code;
 public:
 
-    // Instruction(const Instruction& ins) = default;
+    Instruction(const Instruction& ins) = default;
+
     /**
      * SVC index
     */
@@ -84,7 +85,7 @@ public:
         * Construct a instruction only incomplete instruction
         * This is only happen when an incomplete instruction turn into a complete once
     */    
-    Instruction(const Instruction<INCOMPLETE_INS>& ins);
+    // Instruction(const Instruction<INCOMPLETE_INS>& ins);
     
     /* set the offset section of a instruction 
      * for incomplete instruction only
@@ -109,12 +110,15 @@ inline Instruction<INCOMPLETE_INS>::Instruction(const Mnemonic& mnemonic,Operand
 }
 
 
-template<>
-inline Instruction<COMPLETE_INS>::Instruction(const Instruction<INCOMPLETE_INS>& ins){
-    code = ins.encode();
-}
+// template<>
+// inline Instruction<COMPLETE_INS>::Instruction(const Instruction<INCOMPLETE_INS>& ins){
+//     code = ins.encode();
+// }
 
 template<>
 inline void Instruction<INCOMPLETE_INS>::setOff(Operand<Off>& off){
     code |= off.encode();
 }
+
+// template<instruction_type type>
+// inline Instruction<type>::Instruction(const Instruction<type>& ins) = default;
