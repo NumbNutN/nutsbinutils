@@ -53,7 +53,10 @@ extern InstructionSet* curInstructionSet;
 
     //非终结符
     InstructionSet* insSet; /* 指令集 */
-    Instruction* ins;   /* 指令 */
+
+    Instruction<COMPLETE_INS>* ins;   /* 不需要重定位指令 */
+    Instruction<INCOMPLETE_INS>* ins_relo;  /* 需要重定位指令 */
+
     Mnemonic* mnemonic;  /* 指令助记符 */
     Operand<Rd>* rd;     /* 操作数 */
     Operand<Rn>* rn;
@@ -111,6 +114,7 @@ extern InstructionSet* curInstructionSet;
 
 %type <string_literal> SYMBOL_DEFINITION
 %type <ins> INSTRUCTION
+%type <ins_relo> INSTRUCTION_RELO
 %type <insSet> INSTRUCTION_SET
 %type <nullptr> TEXT
 
@@ -120,6 +124,9 @@ extern InstructionSet* curInstructionSet;
 
 TEXT
     : INSTRUCTION_SET                           {
+        //as a instructionset is over
+        //fill the incomplete instruction's offset if the symbol is identified within one section
+        $1->incompleteIdentified();
         //instruction set over
         //add the section
         reloobj.insert(*$1);
@@ -131,6 +138,13 @@ INSTRUCTION_SET
         $1->insert(*$2);
         $$ = $1;
         cout << bitset<32>($2->encode()) << endl;
+    }
+
+    | INSTRUCTION_SET INSTRUCTION_RELO          {
+        //if a imcomplete instruction could be filled in a single file
+        //it should change to a complete instruction before insert into relocable file
+        $1->insert(*$2);
+        $$ = $1;
     }
 
     | INSTRUCTION_SET DOT_WORD                  {$1->insert(*$2);$$ = $1;}
@@ -150,16 +164,16 @@ INSTRUCTION_SET
 INSTRUCTION
     /* SVC */
     : MNEMONIC  IMMEDIATE                       {
-        $$ = new Instruction(*$1);
+        $$ = new Instruction<COMPLETE_INS>(*$1);
     }
 
     /* Data Processing */
     | MNEMONIC RD ',' OPERAND2                  {
-        $$ = new Instruction(*$1,*$2,*$4);
+        $$ = new Instruction<COMPLETE_INS>(*$1,*$2,*$4);
     }
     
     | MNEMONIC RD ',' RN ',' OPERAND2           {
-        $$ = new Instruction(*$1,*$2,*$4,*$6);
+        $$ = new Instruction<COMPLETE_INS>(*$1,*$2,*$4,*$6);
     }
 
     /* MUL */
@@ -169,35 +183,30 @@ INSTRUCTION
 
     /* Single Data Transfer */
     | MNEMONIC RD ',' '[' RN ']'                {
-        $$ = new Instruction(*$1,*$2,*$5);
+        $$ = new Instruction<COMPLETE_INS>(*$1,*$2,*$5);
     }
 
     /* Pre ; No WriteBack */
     | MNEMONIC RD ',' '[' RN ',' OFFSET ']'     {
-        $$ = new Instruction(*$1,*$2,*$5,*$7,Instruction::PRE,Instruction::NOWRITEBACK);
+        $$ = new Instruction<COMPLETE_INS>(*$1,*$2,*$5,*$7,Instruction<COMPLETE_INS>::PRE,Instruction<COMPLETE_INS>::NOWRITEBACK);
     }
 
     /* Pre ; WriteBack */
     | MNEMONIC RD ',' '[' RN ',' OFFSET ']' '!' {
-        $$ = new Instruction(*$1,*$2,*$5,*$7,Instruction::PRE,Instruction::WRITEBACK);
+        $$ = new Instruction<COMPLETE_INS>(*$1,*$2,*$5,*$7,Instruction<COMPLETE_INS>::PRE,Instruction<COMPLETE_INS>::WRITEBACK);
     }
 
     /* Post ; WriteBack */
     | MNEMONIC RD ',' '[' RN ']' ',' OFFSET     {
-        $$ = new Instruction(*$1,*$2,*$5,*$8,Instruction::POST,Instruction::WRITEBACK);
+        $$ = new Instruction<COMPLETE_INS>(*$1,*$2,*$5,*$8,Instruction<COMPLETE_INS>::POST,Instruction<COMPLETE_INS>::WRITEBACK);
     }
 
+INSTRUCTION_RELO
     /* LDR REG, =LABEL */
-    | MNEMONIC RD ',' '=' SYMBOL                {
-        //LDR RD, [PC,#off]
-        //create pc
+    : MNEMONIC RD ',' '=' SYMBOL                {
+        //record the incomplete instruction need to be identified later
         Operand<Rn> pc(PC);
-        //create offset
-        //get the symbol from section
-        uint32_t symPos = curInstructionSet->getSymbolOff($5);
-        uint32_t curPos = curInstructionSet->size();
-        Operand<Off> off(symPos - curPos);
-        $$ = new Instruction(*$1,*$2,pc,off,Instruction::PRE,Instruction::NOWRITEBACK);
+        $$ = new Instruction<INCOMPLETE_INS>(*$1,*$2,pc,Instruction<INCOMPLETE_INS>::PRE,Instruction<INCOMPLETE_INS>::NOWRITEBACK);
     }
 
 
