@@ -50,7 +50,7 @@ extern char* curSymbol;
 
     Register reg;     /* 寄存器 */
     uint32_t immd;             /* 立即数常量 */
-    char* string_literal;       /* 字符串字面量 */
+    char string_literal[64];       /* 字符串字面量 */
 
     //非终结符
     InstructionSet* insSet; /* 指令集 */
@@ -258,6 +258,6 @@ DOT_ALIGN
     }
 
 SYMBOL_DEFINITION
-    : SYMBOL ':'    {$$ = $1;}
+    : SYMBOL ':'    {strcpy($$,$1);}
 
 %%

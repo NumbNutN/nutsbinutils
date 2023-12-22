@@ -106,15 +106,16 @@ R11 [rR]11
 ".align"    {return DOT_ALIGN_NAME;}
 
 {STRING_LITERAL}    {
+
     size_t len = strlen(yytext);
     yytext[len - 1] = '\0';
     yytext[0] = '\0';
-    yylval.string_literal = (char*)yytext+1;
+    strcpy(yylval.string_literal,yytext+1);
     return STRING_LITERAL;
 }
 
 {SYMBOL}        {
-    yylval.string_literal = (char*)yytext;
+    strcpy(yylval.string_literal,yytext);
     //printf("symbol recognize:%d\n",yylineno);
     return SYMBOL;
 }

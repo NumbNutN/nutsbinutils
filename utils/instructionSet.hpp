@@ -62,6 +62,7 @@ public:
     }
 
     //insert a symbol
+    //a symbol use on space
     void insert(const std::string& str){
         symSet[str] = size();
     }
@@ -83,6 +84,7 @@ public:
             
             const reloIns_type& unit = *it;
             const std::string& sym = unit.sym;
+            const uint32_t insPos = unit.pos;
 
             //get the incomlete instruction
             Instruction<INCOMPLETE_INS> incomplete_ins = unit.ins;
@@ -95,13 +97,14 @@ public:
                 std::ostream out(&buffer());
                 out.seekp(curLiteralPoolPos);
                 base << symPos;
-                Operand<Off> off(curLiteralPoolPos);
+                //in armv7 architecture, PC should be fixed by mines 8
+                Operand<Off> off(curLiteralPoolPos - insPos - 8);
                 curLiteralPoolPos += 4;
 
                 //reconstructor a complete one, and remove the incomplete one
                 incomplete_ins.setOff(off);
                 //write the new complete instruction into buffer
-                out.seekp(unit.pos);
+                out.seekp(insPos);
                 base << incomplete_ins;
                 
                 //now delete the incomplete instruction
