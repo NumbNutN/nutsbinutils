@@ -137,7 +137,7 @@ INSTRUCTION_SET
     | INSTRUCTION_SET DOT_STRING                {$1->insert(*$2);$$ = $1;}
     | INSTRUCTION_SET DOT_ALIGN                 {$1->insert(*$2);$$ = $1;}
 
-    | INSTRUCTION_SET SYMBOL                    {$1->insert(std::string($2));$$ = $1;}
+    | INSTRUCTION_SET SYMBOL ':'                {$1->insert(std::string($2));$$ = $1;}
 
     // a section without explict statement ".section" is not allow
     | DOT_SECTION_NAME                          {
@@ -184,6 +184,19 @@ INSTRUCTION
     /* Post ; WriteBack */
     | MNEMONIC RD ',' '[' RN ']' ',' OFFSET     {
         $$ = new Instruction(*$1,*$2,*$5,*$8,Instruction::POST,Instruction::WRITEBACK);
+    }
+
+    /* LDR REG, =LABEL */
+    | MNEMONIC RD ',' '=' SYMBOL                {
+        //LDR RD, [PC,#off]
+        //create pc
+        Operand<Rn> pc(PC);
+        //create offset
+        //get the symbol from section
+        uint32_t symPos = curInstructionSet->getSymbolOff($5);
+        uint32_t curPos = curInstructionSet->size();
+        Operand<Off> off(symPos - curPos);
+        $$ = new Instruction(*$1,*$2,pc,off,Instruction::PRE,Instruction::NOWRITEBACK);
     }
 
 
