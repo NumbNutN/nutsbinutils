@@ -64,7 +64,7 @@ private:
     ImmedOff immedOff = DataProcess_Rm_Shift;
     /* Rd Rn Op2 all feature */
     /* Rd Rn Rm */
-    enum Register reg;
+    enum Register reg = INVALID_REG;
     unsigned shift = 0;
 
     /*Dataprocess op2 only */
@@ -73,7 +73,7 @@ private:
 
     /*Single data transfer only */
     int32_t offset = 0;
-    UpDown upDownBit:1 = UP;                /* 0 down 1 up idx 23 */
+    UpDown upDownBit = UP;                /* 0 down 1 up idx 23 */
 
     uint32_t code = 0;
 

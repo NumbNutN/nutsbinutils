@@ -27,8 +27,8 @@ public:
 private:
 
     /* Single Data Transer only */
-    PrePostIndex prePostIndexingBit:1;   /* 0 post 1 pre idx 24 */
-    WriteBack writeBack:1;               /* 0 no 1 yes idx 21 */
+    PrePostIndex prePostIndexingBit = NOPREPOST;   /* 0 post 1 pre idx 24 */
+    WriteBack writeBack = NOWRITEBACK;               /* 0 no 1 yes idx 21 */
 
     uint8_t prePostIndexingBitIdx = 24; 
     uint8_t writeBackBitIdx = 21;
