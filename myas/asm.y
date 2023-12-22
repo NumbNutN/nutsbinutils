@@ -109,6 +109,7 @@ extern InstructionSet* curInstructionSet;
 %type <op2> OPERAND2            /* 灵活第二操作数 */
 %type <off> OFFSET              /* offset */
 
+%type <string_literal> SYMBOL_DEFINITION
 %type <ins> INSTRUCTION
 %type <insSet> INSTRUCTION_SET
 %type <nullptr> TEXT
@@ -137,7 +138,7 @@ INSTRUCTION_SET
     | INSTRUCTION_SET DOT_STRING                {$1->insert(*$2);$$ = $1;}
     | INSTRUCTION_SET DOT_ALIGN                 {$1->insert(*$2);$$ = $1;}
 
-    | INSTRUCTION_SET SYMBOL ':'                {$1->insert(std::string($2));$$ = $1;}
+    | INSTRUCTION_SET SYMBOL_DEFINITION         {$1->insert(std::string($2));$$ = $1;}
 
     // a section without explict statement ".section" is not allow
     | DOT_SECTION_NAME                          {
@@ -243,5 +244,8 @@ DOT_ALIGN
         //get the current position
         $$ = new directive<ALIGN>($2,curInstructionSet->size());
     }
+
+SYMBOL_DEFINITION
+    : SYMBOL ':'    {$$ = $1;}
 
 %%

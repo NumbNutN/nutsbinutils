@@ -43,7 +43,7 @@ SetCondition "S"|"s"
 IMMEDIATE "-"?[0-9]+
 
 STRING_LITERAL \"[a-zA-Z_ ]+\"
-SYMBOL  [a-zA-Z_]+
+SYMBOL  [a-zA-Z0-9_]+
 
 
 R0  [rR]0
@@ -115,7 +115,7 @@ R11 [rR]11
 
 {SYMBOL}        {
     yylval.string_literal = (char*)yytext;
-    printf("symbol recognize:%d",yylineno);
+    //printf("symbol recognize:%d\n",yylineno);
     return SYMBOL;
 }
 
