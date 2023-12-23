@@ -153,13 +153,14 @@ public:
         out << std::hex << "buffer base " << (uint64_t)buf << std::endl;
         out << std::hex << "pbegin " << (uint64_t)pbase() << " pnext " << (uint64_t)pptr() << " pend " << (uint64_t)epptr() << std::endl;
         out << std::hex << "gbegin " << (uint64_t)eback() << " gnext " << (uint64_t)gptr() << " gend " << (uint64_t)egptr() << std::endl;
+        std::cout << "\033[0m" << std::endl;
         std::cout << std::endl;
     }
 
     void content(std::ostream& out){
         char* p;
         const size_t showPerLine = 16;
-        out << "\033[32mbinary buffer content(in hex)" << std::endl;
+        out << "\033[34mbinary buffer content(in hex)" << std::endl;
         //write the list
         for(int i=0;i<showPerLine;++i){
             out << std::hex <<std::setfill('0') << std::setw(2) << i;
@@ -174,6 +175,7 @@ public:
             if((p - eback() + 1)%showPerLine)out << ' ';
             else out << std::endl;
         }
+        std::cout << "\033[0m" << std::endl;
         if((p - eback())%showPerLine)out << std::endl;
         out << std::endl;
     }

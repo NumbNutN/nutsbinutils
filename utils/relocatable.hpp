@@ -13,7 +13,7 @@
 #include <string>
 #include <fstream>
 
-class relocation_file : public elf{
+class Relocatable : public elf{
 
 private:
 
@@ -24,9 +24,9 @@ private:
 
 public:
     //section header table
-    std::vector<section> sectionUnitList;    
+    std::vector<Section> sectionUnitList;    
 
-    relocation_file() : elf(ET_REL){}
+    Relocatable() : elf(ET_REL){}
 
     void arange(){
 
@@ -43,7 +43,7 @@ public:
         _ehdr.e_shoff =0x300;
     }
 
-    void insert(section& sec){
+    void insert(Section& sec){
         
         //select a new offset
         uint32_t offset = allocoffset(sec.size(),3);
@@ -59,13 +59,13 @@ public:
         _ehdr.e_shnum++;
     }
 
-    friend std::ostream &operator<<(std::ostream& output,relocation_file &relo);
-    friend std::istream &operator>>(std::istream& input,relocation_file &relo);
+    friend std::ostream &operator<<(std::ostream& output,Relocatable &relo);
+    friend std::istream &operator>>(std::istream& input,Relocatable &relo);
 
 public:
 
     //iterator
-    using iterator = typename std::vector<section>::iterator;
+    using iterator = typename std::vector<Section>::iterator;
 
     //implement begin and end
     iterator begin(){
@@ -78,7 +78,7 @@ public:
 
 };
 
-inline std::ostream &operator<<(std::ostream& output,relocation_file &relo){
+inline std::ostream &operator<<(std::ostream& output,Relocatable &relo){
 
     //first output elf header
     output << relo.base;
@@ -86,12 +86,12 @@ inline std::ostream &operator<<(std::ostream& output,relocation_file &relo){
     //write section header table & sections
     //write section header table
     output.seekp(relo._ehdr.e_shoff, std::ios::beg);
-    for(const section& sec:relo.sectionUnitList){
+    for(const Section& sec:relo.sectionUnitList){
         output.write(reinterpret_cast<const char*>(&sec.getHeader()), sizeof(Elf32_Shdr));
         output.flush();
     }
 
-    for(section& sec:relo.sectionUnitList){
+    for(Section& sec:relo.sectionUnitList){
         //write each section
         output.seekp(sec.getHeader().sh_offset,std::ios::beg);
         output << sec;
@@ -102,7 +102,7 @@ inline std::ostream &operator<<(std::ostream& output,relocation_file &relo){
 /**
  * read a relocable file
 */
-inline std::istream &operator>>(std::istream& input,relocation_file &relo){
+inline std::istream &operator>>(std::istream& input,Relocatable &relo){
 
     //read elf header
     input >> relo.base;
@@ -131,7 +131,7 @@ inline std::istream &operator>>(std::istream& input,relocation_file &relo){
         std::string name = shstrtbl.getName(shdr.sh_name);
 
         //construct a section
-        section sec(name,shdr);
+        Section sec(name,shdr);
 
         //read the section content
         input.seekg(shdr.sh_offset);

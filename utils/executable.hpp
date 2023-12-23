@@ -5,19 +5,19 @@
 #include "elf.hpp"
 #include "segment.hpp"
 
-class exculate_file : public elf{
+class Executable : public elf{
 
 private:
 
     uint32_t _palign;
     elf& base = (elf&)*this;
-    std::vector<segment> segmentUnitList; /* segement header table */
+    std::vector<Segment> segmentUnitList; /* segement header table */
 
 public:
 
-    exculate_file(uint32_t align) :elf(ET_EXEC),_palign(align){}
+    Executable(uint32_t align) :elf(ET_EXEC),_palign(align){}
 
-    void insert(segment& seg){
+    void insert(Segment& seg){
 
         //select a new offset
         uint32_t off = allocoffset(seg.size(),_palign);
@@ -39,24 +39,24 @@ public:
         _ehdr.e_phoff += getcuroffset();
     }
 
-    friend std::ostream &operator<<(std::ostream& output,exculate_file& exec);
+    friend std::ostream &operator<<(std::ostream& output,Executable& exec);
 
 };
 
-inline std::ostream &operator<<(std::ostream& output,exculate_file& exec){
+inline std::ostream &operator<<(std::ostream& output,Executable& exec){
 
     output << exec.base;
     // write segment header table & segments
 
     // write segment header table
     output.seekp(exec._ehdr.e_phoff, std::ios::beg);
-    for(const segment& seg:exec.segmentUnitList){
+    for(const Segment& seg:exec.segmentUnitList){
         Elf32_Phdr phdr = seg.getHeader();
         output.write(reinterpret_cast<const char*>(&phdr), sizeof(Elf32_Phdr));
         output.flush();
     }
     //write each program
-    for(segment& seg:exec.segmentUnitList){
+    for(Segment& seg:exec.segmentUnitList){
         output.seekp(seg.getHeader().p_offset,std::ios::beg);
         output << seg;
     }

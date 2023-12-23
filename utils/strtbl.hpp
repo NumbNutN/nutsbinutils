@@ -5,23 +5,23 @@
 
 #include <iostream>
 
-class strtbl : public section{
+class strtbl : public Section{
 
 protected:
-    section& base = (section&)*this;
+    Section& base = (Section&)*this;
 
 public:
 
     strtbl() : 
-        section(".shstrtab",SHT_STRTAB,0x0) {
+        Section(".shstrtab",SHT_STRTAB,0x0) {
     }
 
-    strtbl(Elf32_Shdr shdr) :section("shstrtab",shdr){}
+    strtbl(Elf32_Shdr shdr) :Section("shstrtab",shdr){}
 
     uint32_t insert(std::string name){
-        size_t tmp = section::size();
+        size_t tmp = Section::size();
         base << name;
-        section::size() += (name.length() + 1);
+        Section::size() += (name.length() + 1);
         return tmp;
     }
 

@@ -11,17 +11,17 @@
 /**
  * segment manager
  */
-class segment {
+class Segment {
 
 private:
   binbuf _buf;
   Elf32_Phdr _phdr; /* segement header */
 
     //section list
-    std::vector<section> sectionUnitList;
+    std::vector<Section> sectionUnitList;
 public:
 
-  segment(Elf32_Word type, Elf32_Addr vaddr, Elf32_Addr paddr, Elf32_Word flags, Elf32_Word align)
+  Segment(Elf32_Word type, Elf32_Addr vaddr, Elf32_Addr paddr, Elf32_Word flags, Elf32_Word align)
       : _phdr({.p_type = type,
                .p_vaddr = vaddr,
                .p_paddr = paddr,
@@ -49,7 +49,7 @@ public:
     /* insert section into segment for management
      * also copy the content
     */
-    void insert(section& sec){
+    void insert(Section& sec){
 
         sectionUnitList.push_back(sec);
         *this << sec;
@@ -63,7 +63,7 @@ public:
 
         //linking the section with similar flags together
         //std::ostream out(&_buf);
-        for(section& sec:sectionUnitList){
+        for(Section& sec:sectionUnitList){
             //out << sec;
 
 
@@ -74,19 +74,19 @@ public:
         return _phdr;
     }
 
-    friend segment& operator<<(segment& seg,section& sec);
+    friend Segment& operator<<(Segment& seg,Section& sec);
 
-    friend std::ostream& operator<<(std::ostream& out,segment& seg);
+    friend std::ostream& operator<<(std::ostream& out,Segment& seg);
 };
 
-inline segment& operator<<(segment& seg,section& sec){
+inline Segment& operator<<(Segment& seg,Section& sec){
     std::ostream out(&seg._buf);
     out << sec;
     return seg;
 }
 
 //segment operator<< has no right to change the get area pointer
-inline std::ostream& operator<<(std::ostream& out,segment& seg)
+inline std::ostream& operator<<(std::ostream& out,Segment& seg)
 {
     std::istream in(&seg._buf);
     //write as segment size says

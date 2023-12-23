@@ -4,13 +4,12 @@
 %output "parser.c"
 
 %{
+#include "binbuf.hpp"
 #include "mnemonic.hpp"
 #include "operand.hpp"
-#include "instructionSet.hpp"
 #include "instruction.hpp"
-#include "elf.hpp"
-#include "relocationFile.hpp"
-#include "binbuf.hpp"
+#include "customizable_section.hpp"
+#include "relocatable.hpp"
 
 #include <iostream>
 #include <bitset>
@@ -32,8 +31,8 @@ void yyerror(char *s, ...) // 变长参数错误处理函数
 
 extern "C" int yylex();
 
-extern relocation_file reloobj;
-extern InstructionSet* curInstructionSet;
+extern Relocatable reloobj;
+extern CustomizableSection* curInstructionSet;
 extern char* curSymbol;
 
 %}
@@ -53,10 +52,10 @@ extern char* curSymbol;
     char string_literal[64];       /* 字符串字面量 */
 
     //非终结符
-    InstructionSet* insSet; /* 指令集 */
+    CustomizableSection* seq; /* 指令集 */
 
     Instruction<COMPLETE_INS>* ins;   /* 不需要重定位指令 */
-    Instruction<INCOMPLETE_INS>* ins_relo;  /* 需要重定位指令 */
+    Instruction<INCOMPLETE_INS>* incomplete_ins;  /* 需要重定位指令 */
 
     Mnemonic* mnemonic;  /* 指令助记符 */
     Operand<Rd>* rd;     /* 操作数 */
@@ -65,10 +64,10 @@ extern char* curSymbol;
     Operand<Op2>* op2;
     Operand<Off>* off;
     
-    directive<WORD>* dot_word;
-    directive<ZERO>* dot_zero;
-    directive<ALIGN>* dot_align;
-    directive<STRING>* dot_string;
+    Directive<WORD>* directive_word;
+    Directive<ZERO>* directive_zero;
+    Directive<ALIGN>* directive_align;
+    Directive<STRING>* directive_string;
     
 }
 
@@ -93,16 +92,16 @@ extern char* curSymbol;
 %token <string_literal> SYMBOL      /* 符号 */
 
 //directives
-%token <nullptr> DOT_WORD_NAME
-%token <nullptr> DOT_ZERO_NAME
-%token <nullptr> DOT_STRING_NAME
-%token <nullptr> DOT_ALIGN_NAME
-%token <nullptr> DOT_SECTION_NAME
+%token <nullptr> DIRECTIVE_WORD_NAME
+%token <nullptr> DIRECTIVE_ZERO_NAME
+%token <nullptr> DIRECTIVE_STRING_NAME
+%token <nullptr> DIRECTIVE_ALIGN_NAME
+%token <nullptr> DIRECTIVE_SECTION_NAME
 
-%type <dot_word> DOT_WORD
-%type <dot_zero> DOT_ZERO
-%type <dot_string> DOT_STRING
-%type <dot_align> DOT_ALIGN
+%type <directive_word> DIRECTIVE_WORD
+%type <directive_zero> DIRECTIVE_ZERO
+%type <directive_string> DIRECTIVE_STRING
+%type <directive_align> DIRECTIVE_ALIGN
 
 %type <mnemonic> MNEMONIC           /* 指令助记符 */
 
@@ -115,8 +114,8 @@ extern char* curSymbol;
 
 %type <string_literal> SYMBOL_DEFINITION
 %type <ins> INSTRUCTION
-%type <ins_relo> INSTRUCTION_RELO
-%type <insSet> INSTRUCTION_SET
+%type <incomplete_ins> INCOMPLETE_INSTRUCTION
+%type <seq> SEQUENCE
 %type <nullptr> TEXT
 
 
@@ -124,8 +123,8 @@ extern char* curSymbol;
 %%
 
 TEXT
-    : INSTRUCTION_SET                           {
-        //as a instructionset is over
+    : SEQUENCE                           {
+        //as a customizable section is over
         //fill the incomplete instruction's offset if the symbol is identified within one section
         $1->incompleteIdentified();
         //instruction set over
@@ -135,32 +134,32 @@ TEXT
         std::cout << reloobj.sectionUnitList[0].buffer();
     }
 
-INSTRUCTION_SET
-    : INSTRUCTION_SET INSTRUCTION               {
+SEQUENCE
+    : SEQUENCE INSTRUCTION               {
         //counter new instruction, insert
         $1->insert(*$2);
         $$ = $1;
         // cout << bitset<32>($2->encode()) << endl;
     }
 
-    | INSTRUCTION_SET INSTRUCTION_RELO          {
+    | SEQUENCE INCOMPLETE_INSTRUCTION          {
         //if a imcomplete instruction could be filled in a single file
         //it should change to a complete instruction before insert into relocable file
         $1->insert(*$2,curSymbol);
         $$ = $1;
     }
 
-    | INSTRUCTION_SET DOT_WORD                  {$1->insert(*$2);$$ = $1;}
-    | INSTRUCTION_SET DOT_ZERO                  {$1->insert(*$2);$$ = $1;}
-    | INSTRUCTION_SET DOT_STRING                {$1->insert(*$2);$$ = $1;}
-    | INSTRUCTION_SET DOT_ALIGN                 {$1->insert(*$2);$$ = $1;}
+    | SEQUENCE DIRECTIVE_WORD                  {$1->insert(*$2);$$ = $1;}
+    | SEQUENCE DIRECTIVE_ZERO                  {$1->insert(*$2);$$ = $1;}
+    | SEQUENCE DIRECTIVE_STRING                {$1->insert(*$2);$$ = $1;}
+    | SEQUENCE DIRECTIVE_ALIGN                 {$1->insert(*$2);$$ = $1;}
 
-    | INSTRUCTION_SET SYMBOL_DEFINITION         {$1->insert(std::string($2));$$ = $1;}
+    | SEQUENCE SYMBOL_DEFINITION         {$1->insert(std::string($2));$$ = $1;}
 
     // a section without explict statement ".section" is not allow
-    | DOT_SECTION_NAME                          {
+    | DIRECTIVE_SECTION_NAME                          {
         //create a instruction set object
-        $$ = new InstructionSet();
+        $$ = new CustomizableSection();
         curInstructionSet = $$;
     }
 
@@ -204,7 +203,7 @@ INSTRUCTION
         $$ = new Instruction<COMPLETE_INS>(*$1,*$2,*$5,*$8,Instruction<COMPLETE_INS>::POST,Instruction<COMPLETE_INS>::WRITEBACK);
     }
 
-INSTRUCTION_RELO
+INCOMPLETE_INSTRUCTION
     /* LDR REG, =LABEL */
     : MNEMONIC RD ',' '=' SYMBOL                {
         //record the incomplete instruction need to be identified later
@@ -244,19 +243,19 @@ OFFSET
     | '-' RM    {$$ = new Operand<Off>($2,0,Operand<Off>::DOWN);}
     | '#' IMMEDIATE {$$ = new Operand<Off>($2);}
 
-DOT_WORD
-    : DOT_WORD_NAME IMMEDIATE   {$$ = new directive<WORD>($2);}
+DIRECTIVE_WORD
+    : DIRECTIVE_WORD_NAME IMMEDIATE   {$$ = new Directive<WORD>($2);}
 
-DOT_ZERO
-    : DOT_ZERO_NAME IMMEDIATE   {$$ = new directive<ZERO>($2);}
+DIRECTIVE_ZERO
+    : DIRECTIVE_ZERO_NAME IMMEDIATE   {$$ = new Directive<ZERO>($2);}
 
-DOT_STRING
-    : DOT_STRING_NAME STRING_LITERAL     {$$ = new directive<STRING>(std::string($2));}
+DIRECTIVE_STRING
+    : DIRECTIVE_STRING_NAME STRING_LITERAL     {$$ = new Directive<STRING>(std::string($2));}
 
-DOT_ALIGN
-    : DOT_ALIGN_NAME IMMEDIATE          {
+DIRECTIVE_ALIGN
+    : DIRECTIVE_ALIGN_NAME IMMEDIATE          {
         //get the current position
-        $$ = new directive<ALIGN>($2,curInstructionSet->size());
+        $$ = new Directive<ALIGN>($2,curInstructionSet->size());
     }
 
 SYMBOL_DEFINITION

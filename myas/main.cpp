@@ -1,8 +1,8 @@
 #include "mnemonic.hpp"
 #include "operand.hpp"
 #include "instruction.hpp"
-#include "instructionSet.hpp"
-#include "relocationFile.hpp"
+#include "customizable_section.hpp"
+#include "relocatable.hpp"
 
 #include "scanner.h"
 #include "parser.h"
@@ -45,10 +45,10 @@ unordered_map<Mnemonic::asm_affix,uint32_t> Mnemonic::cond2Code = {
 };
 
 //create a elf object
-relocation_file reloobj;
+Relocatable reloobj;
 
 //current instruction set address, use in lexical parser
-InstructionSet* curInstructionSet;
+CustomizableSection* curInstructionSet;
 
 //current recorded symbol that in a LDR instruction
 char* curSymbol;

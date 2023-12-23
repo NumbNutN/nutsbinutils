@@ -8,7 +8,7 @@
 #include <streambuf>
 
 
-class section{
+class Section{
 
 private:
     std::string _name;
@@ -17,7 +17,7 @@ private:
 
 protected:
     
-    section(const std::string& name,Elf32_Word type,Elf32_Word addr,Elf32_Word flags = 0) :
+    Section(const std::string& name,Elf32_Word type,Elf32_Word addr,Elf32_Word flags = 0) :
             _name(name),
             _sechdr({
                 .sh_type = type,
@@ -32,7 +32,7 @@ public:
      * create a section object using section header,basically use when reading from file
      * name is required when construct from a relocatable file
     */
-    section(const std::string& name,const Elf32_Shdr& sechdr): _name(name),_sechdr(sechdr){}
+    Section(const std::string& name,const Elf32_Shdr& sechdr): _name(name),_sechdr(sechdr){}
 
     const Elf32_Shdr& getHeader() const{
         return _sechdr;
@@ -74,23 +74,23 @@ public:
         return _sechdr.sh_flags;
     }
 
-    friend std::ostream& operator<<(std::ostream& out,section& sec);
-    friend std::istream& operator>>(std::istream& in,section& sec);
+    friend std::ostream& operator<<(std::ostream& out,Section& sec);
+    friend std::istream& operator>>(std::istream& in,Section& sec);
 
     template <typename T>
-    friend section& operator<<(section& sec,T dat);
+    friend Section& operator<<(Section& sec,T dat);
 
     // friend section& operator<<(section& sec,uint32_t dat);
 
     // friend section& operator<<(section& sec,std::string& dat);
 
     template<directive_type type>
-    friend section& operator<<(section& sec,directive<type>& directive);
+    friend Section& operator<<(Section& sec,Directive<type>& directive);
 
 };
 
 // now section operator<< has no right to set put area offset
-inline std::ostream& operator<<(std::ostream& out,section& sec)
+inline std::ostream& operator<<(std::ostream& out,Section& sec)
 {
     std::istream in(&sec._buf);
     char tmp[sec.size()];
@@ -103,7 +103,7 @@ inline std::ostream& operator<<(std::ostream& out,section& sec)
 /**
  * the input stream is usually a binary stream from file
 */
-inline std::istream& operator>>(std::istream& in,section& sec){
+inline std::istream& operator>>(std::istream& in,Section& sec){
 
     std::ostream out(&sec._buf);
     char tmp[sec._sechdr.sh_size];
@@ -114,7 +114,7 @@ inline std::istream& operator>>(std::istream& in,section& sec){
 }
 
 template <typename T>
-inline section& operator<<(section& sec,T dat){
+inline Section& operator<<(Section& sec,T dat){
     std::ostream out(&sec._buf);
     out.write((const char*)&dat,sizeof(T));
     return sec;
@@ -127,7 +127,7 @@ inline section& operator<<(section& sec,T dat){
 // }
 
 template<>
-inline section& operator<<(section& sec,std::string& dat){
+inline Section& operator<<(Section& sec,std::string& dat){
     std::ostream out(&sec._buf);
     out << dat;
     char c = '\0';
@@ -136,7 +136,7 @@ inline section& operator<<(section& sec,std::string& dat){
 }
 
 template<directive_type type>
-inline section& operator<<(section& sec,directive<type>& directive){
+inline Section& operator<<(Section& sec,Directive<type>& directive){
     std::ostream out(&sec._buf);
     out << directive;
     return sec;

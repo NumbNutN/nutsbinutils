@@ -2,8 +2,6 @@
 
 #include <stdint.h>
 
-#include "tool.hpp"
-
 #include <iostream>
 
 using namespace std;

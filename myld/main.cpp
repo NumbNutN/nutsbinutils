@@ -1,7 +1,7 @@
-#include "relocationFile.hpp"
-#include "excutableFile.hpp"
-#include "segment.hpp"
 #include "section.hpp"
+#include "segment.hpp"
+#include "relocatable.hpp"
+#include "executable.hpp"
 
 #include <unistd.h>
 
@@ -36,9 +36,9 @@ int main(int argc,char* argv[]){
     out.open(outputPath,std::ios::out | std::ios::binary);
 
     //create a excutable file object
-    exculate_file exec_obj(size2shift(sysconf(_SC_PAGE_SIZE)));
+    Executable exec_obj(size2shift(sysconf(_SC_PAGE_SIZE)));
 
-    std::vector<relocation_file> reloVec;
+    std::vector<Relocatable> reloVec;
     //read all the allocable file
     for(int i = 2;i < argc;i++){
         char* ptr = argv[i];
@@ -46,23 +46,23 @@ int main(int argc,char* argv[]){
         std::ifstream fin;
         fin.open(ptr,std::ios::in | std::ios::binary);
 
-        relocation_file frelo;
+        Relocatable frelo;
         fin >> frelo;
         //push to relocable files vector
         reloVec.push_back(frelo);
     }
 
     // <flags,vector<section>> 
-    std::unordered_map<Elf32_Word, std::vector<section>> map = {
-        {SHF_ALLOC,std::vector<section>()},
-        {SHF_ALLOC | SHF_WRITE,std::vector<section>()},
-        {SHF_ALLOC | SHF_EXECINSTR,std::vector<section>()},
-        {SHF_ALLOC | SHF_WRITE | SHF_EXECINSTR,std::vector<section>()}
+    std::unordered_map<Elf32_Word, std::vector<Section>> map = {
+        {SHF_ALLOC,std::vector<Section>()},
+        {SHF_ALLOC | SHF_WRITE,std::vector<Section>()},
+        {SHF_ALLOC | SHF_EXECINSTR,std::vector<Section>()},
+        {SHF_ALLOC | SHF_WRITE | SHF_EXECINSTR,std::vector<Section>()}
     };
 
     //analyse the section with same flags
-    for(relocation_file& relo:reloVec){
-        for(section& sec:relo.sectionUnitList){
+    for(Relocatable& relo:reloVec){
+        for(Section& sec:relo.sectionUnitList){
             if(sec.getHeader().sh_type == SHT_PROGBITS)
                 map.at(sec.flags()).push_back(sec);
         }
@@ -77,10 +77,10 @@ int main(int argc,char* argv[]){
         if(unit.second.empty())continue;
 
         //create a program header for section sets with this flag
-        segment seg(PT_LOAD,0x0,0x0,flags,size2shift(sysconf(_SC_PAGE_SIZE)));
+        Segment seg(PT_LOAD,0x0,0x0,flags,size2shift(sysconf(_SC_PAGE_SIZE)));
 
         //insert all the section content to segment
-        for(section& sec:unit.second){
+        for(Section& sec:unit.second){
             seg.insert(sec);
         }
 

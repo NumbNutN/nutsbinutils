@@ -9,7 +9,7 @@
 #include "directive.hpp"
 #include "section.hpp"
 
-class InstructionSet : public section{
+class CustomizableSection : public Section{
 
 protected:
 
@@ -26,11 +26,11 @@ protected:
 
     std::vector<reloIns_type> reloInsSet;
 
-    section& base = (section&)*this;
+    Section& base = (Section&)*this;
 
 public:
-    InstructionSet() :
-        section(".text",
+    CustomizableSection() :
+        Section(".text",
                 SHT_PROGBITS,
                 0x0,
                 SHF_ALLOC | SHF_EXECINSTR){
@@ -42,7 +42,7 @@ public:
         //write the encode to buffer
         uint32_t code = ins.encode();
         base << code;
-        section::size() += sizeof(uint32_t);
+        Section::size() += sizeof(uint32_t);
     }
 
     void insert(const Instruction<INCOMPLETE_INS>& ins,const std::string sym){
@@ -52,11 +52,11 @@ public:
         //write the encode to buffer
         uint32_t code = ins.encode();
         base << code;
-        section::size() += sizeof(uint32_t);
+        Section::size() += sizeof(uint32_t);
     }
 
     template <directive_type type>
-    void insert(directive<type>& obj){
+    void insert(Directive<type>& obj){
         base << obj;
         size() += obj.size();
     }

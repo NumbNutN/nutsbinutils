@@ -2,7 +2,7 @@
 #include "mnemonic.hpp"
 #include "operand.hpp"
 #include "instruction.hpp"
-#include "instructionSet.hpp"
+#include "customizable_section.hpp"
 #include "parser.h"
 
 #include <string.h>
@@ -99,11 +99,11 @@ R11 [rR]11
 
 {IMMEDIATE} {yylval.immd = atoi(yytext); return IMMEDIATE;}
 
-".section"  {return DOT_SECTION_NAME;}
-".word"     {return DOT_WORD_NAME;}
-".string"   {return DOT_STRING_NAME;}
-".zero"     {return DOT_ZERO_NAME;}
-".align"    {return DOT_ALIGN_NAME;}
+".section"  {return DIRECTIVE_SECTION_NAME;}
+".word"     {return DIRECTIVE_WORD_NAME;}
+".string"   {return DIRECTIVE_STRING_NAME;}
+".zero"     {return DIRECTIVE_ZERO_NAME;}
+".align"    {return DIRECTIVE_ALIGN_NAME;}
 
 {STRING_LITERAL}    {
 
