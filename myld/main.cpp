@@ -60,6 +60,15 @@ int main(int argc,char* argv[]){
         {SHF_ALLOC | SHF_WRITE | SHF_EXECINSTR,std::vector<Section>()}
     };
 
+    uint32_t pos;
+    //set the entry if see the _start
+    for(Relocatable& relo:reloVec){
+        //if a global symbol name "_start" here
+        if ((pos = relo.getSymbolPos("_start")) != -1){
+            exec_obj.entry() = pos;
+        }
+    }
+
     //analyse the section with same flags
     for(Relocatable& relo:reloVec){
         for(Section& sec:relo.sectionUnitList){

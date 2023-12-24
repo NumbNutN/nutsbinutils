@@ -21,14 +21,13 @@ private:
 
     elf& base = (elf&)*this;
 
+    uint32_t cur_sec_idx = 0;
     //symbol table
     Symtab symtbl;
-
+    //string table
+    strtbl string_table;
     //section string table
     strtbl shstrtbl;
-
-    //string table
-    strtbl strtbl;
    
     //wait for setting to global symbol
     std::vector<std::string> global_sym_list;
@@ -39,7 +38,10 @@ public:
     //customizatable section has the idx same as its idx in vector
     std::vector<CustomizableSection> sectionUnitList;
 
-    Relocatable() : elf(ET_REL){}
+    Relocatable() : elf(ET_REL),
+    symtbl(base),
+    string_table(base,STRTBL),
+    shstrtbl(base,SHSTRTBL){}
 
     void arange(){
         
@@ -48,14 +50,14 @@ public:
         for(std::string& sym : global_sym_list){
 
             //for each customizable section
-            for(const CustomizableSection& sec:sectionUnitList){
+            for(CustomizableSection& sec:sectionUnitList){
                 
                 //if symbol exist
                 uint32_t symbol_off;
                 if((symbol_off = sec.getSymbolOff(sym)) != -1){
 
                     //add into the string table
-                    uint32_t ndx = strtbl.insert(sym);
+                    uint32_t ndx = string_table.insert(sym);
                     //add into the symbol table
                     symtbl.insert(STB_GLOBAL, ndx, symbol_off, idx);
                 }
@@ -65,9 +67,9 @@ public:
 
         //insert the symbol table to relocatable
         insert(symtbl);
-        
+
         //insert the string table to relocatable
-        insert(strtbl);
+        insert(string_table);
 
         //the section string table idx
         //section string table should be the last section
@@ -81,13 +83,18 @@ public:
     }
 
     void insert(Section& sec){
+
+        //first insert the section name to shstrtbl
+        //remember shstrtbl will also call this api
+        uint32_t idx = shstrtbl.insert(sec.getName());
+        sec.setNameIdx(idx);
+
         //select a new offset
         uint32_t offset = allocoffset(sec.size(),3);
         sec.setOffset(offset);
 
-        //also insert the section name to shstrtbl
-        uint32_t idx = shstrtbl.insert(sec.getName());
-        sec.setNameIdx(idx);
+        //select a ndx
+        sec.setNdx(cur_sec_idx++);
 
         _ehdr.e_shnum++;
     }
@@ -105,12 +112,14 @@ public:
     //insert a global symbol into relocatable
     void insert(const std::string& sym){
 
-        //only record the symbol,actually add into symbol table when arange
+        //only record the symbol
+        //actually add into symbol table when arange
         global_sym_list.push_back(sym);
         
     }
 
-    friend std::ostream &operator<<(std::ostream& output,Relocatable &relo);
+
+    friend std::ofstream &operator<<(std::ofstream& output,Relocatable &relo);
     friend std::ifstream &operator>>(std::ifstream& input,Relocatable &relo);
 
 public:
@@ -127,39 +136,42 @@ public:
         return sectionUnitList.end();
     }
 
+    uint32_t getSymbolPos(const std::string& sym){
+        //reserve the symbol table
+        for(int i=0;i<symtbl.size()/sizeof(Elf32_Sym);++i){
+            Elf32_Sym symHdr = symtbl.getSymbol(i);
+            //search for name in string table
+            std::string name = string_table.getName(symHdr.st_name);
+            if (name == sym){
+                return symHdr.st_value;
+            }
+        }
+        return -1;
+    }
+
 };
 
-inline std::ostream &operator<<(std::ostream& output,Relocatable &relo){
+inline std::ofstream &operator<<(std::ofstream& output,Relocatable &relo){
 
     //first output elf header
     output << relo.base;
 
     //write section header table & sections
 
-    //write section header table
-    output.seekp(relo._ehdr.e_shoff, std::ios::beg);
-    for(const Section& sec:relo.sectionUnitList){
-        output.write(reinterpret_cast<const char*>(&sec.getHeader()), sizeof(Elf32_Shdr));
-        output.flush();
-    }
-
     //write symbol table
-    output.seekp(relo.symtbl.getHeader().sh_offset);
     output << relo.symtbl;
 
     //write string table
-    output.seekp(relo.strtbl.getHeader().sh_offset);
-    output << relo.strtbl;
+    output << relo.string_table;
 
     //write section string table
-    output.seekp(relo.shstrtbl.getHeader().sh_offset);
     output << relo.shstrtbl;
 
     //write each customizatable section
     for(Section& sec:relo.sectionUnitList){
-        output.seekp(sec.getHeader().sh_offset,std::ios::beg);
         output << sec;
     }
+
     return output;
 }
 
@@ -172,56 +184,26 @@ inline std::ifstream &operator>>(std::ifstream& input,Relocatable &relo){
     //read elf header
     input >> relo.base;
 
-    //read the section header table first
-    Elf32_Word shoff = relo._ehdr.e_shoff;
-    Elf32_Shdr shstrtblhdr;
-    input.seekg(shoff + relo._ehdr.e_shstrndx * sizeof(Elf32_Shdr), std::ios::beg);
-    input.read((char*)&shstrtblhdr, sizeof(Elf32_Shdr));
-
-    strtbl shstrtbl(shstrtblhdr);
-    input.seekg(shstrtblhdr.sh_offset);
-    input >> shstrtbl;
+    //read the section string table first
+    input >> relo.shstrtbl;
 
     //read the customizatable section
     for(idx=0;idx<relo._ehdr.e_shnum - 3;++idx){
         
-        //create a new section object
-        Elf32_Shdr shdr;
-
-        //read the section header
-        input.seekg(relo._ehdr.e_shoff + idx*sizeof(Elf32_Shdr), std::ios::beg);
-        input.read((char*)&shdr, sizeof(Elf32_Shdr));
-
-        //read the name of section
-        std::string name = shstrtbl.getName(shdr.sh_name);
-
         //construct a section
-        CustomizableSection sec(name,shdr);
+        CustomizableSection sec(relo.base);
+        sec.setNdx(idx);
 
         //read the section content
-        input.seekg(shdr.sh_offset);
         input >> sec;
         relo.sectionUnitList.push_back(sec);
     }
 
-    Elf32_Shdr shdr;
     //construct the symbol table
-    input.seekg(relo._ehdr.e_shoff + (idx++)*sizeof(Elf32_Shdr));
-    input.read((char*)&shdr, sizeof(Elf32_Shdr));
-    relo.symtbl.setHeader(shdr);
     input >> relo.symtbl;
 
     //construct the string table
-    input.seekg(relo._ehdr.e_shoff + (idx++)*sizeof(Elf32_Shdr));
-    input.read((char*)&shdr, sizeof(Elf32_Shdr));
-    relo.strtbl.setHeader(shdr);
-    input >> relo.strtbl;
-
-    //construct the section string table
-    input.seekg(relo._ehdr.e_shoff + (idx++)*sizeof(Elf32_Shdr));
-    input.read((char*)&shdr, sizeof(Elf32_Shdr));
-    relo.strtbl.setHeader(shdr);
-    input >> relo.shstrtbl;
+    input >> relo.string_table;
 
     //all done
     return input;

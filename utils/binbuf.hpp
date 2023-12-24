@@ -170,11 +170,28 @@ public:
 
         //start from the gbase
         for(p = eback();p!= end();++p){
+            //write down the hex content
             char dat = *p;
             out << std::hex << std::setfill('0') << std::setw(2)<< (((uint32_t)dat) & 0xFF);
             if((p - eback() + 1)%showPerLine)out << ' ';
             else out << std::endl;
         }
+
+        if((p - eback())%showPerLine)out << std::endl;
+        out << std::endl;
+
+        for(p = eback();p!= end();++p){
+            //write down the hex content
+            char dat = *p;
+            if(dat >= 'A' && dat <= 'z')
+                out << std::setfill(' ') << std::setw(2) << dat;
+            else 
+                out << "..";
+
+            if((p - eback() + 1)%showPerLine)out << ' ';
+            else out << std::endl;
+        }
+
         std::cout << "\033[0m" << std::endl;
         if((p - eback())%showPerLine)out << std::endl;
         out << std::endl;

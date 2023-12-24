@@ -26,23 +26,22 @@ protected:
 
     std::vector<reloIns_type> reloInsSet;
 
-    Section& base = (Section&)*this;
+    CustomizableSection& base = (CustomizableSection&)*this;
 
 public:
-    CustomizableSection() :
-        Section(".text",
+    CustomizableSection(const elf& elfbase) :
+        Section(elfbase,
+                ".text",
                 SHT_PROGBITS,
                 0x0,
-                SHF_ALLOC | SHF_EXECINSTR){
-            
-        }
+                SHF_ALLOC | SHF_EXECINSTR){}
     
     void insert(const Instruction<COMPLETE_INS>& ins){
 
         //write the encode to buffer
         uint32_t code = ins.encode();
         base << code;
-        Section::size() += sizeof(uint32_t);
+        size() += sizeof(uint32_t);
     }
 
     void insert(const Instruction<INCOMPLETE_INS>& ins,const std::string sym){
@@ -52,7 +51,7 @@ public:
         //write the encode to buffer
         uint32_t code = ins.encode();
         base << code;
-        Section::size() += sizeof(uint32_t);
+        size() += sizeof(uint32_t);
     }
 
     template <directive_type type>
@@ -67,8 +66,13 @@ public:
         symSet[str] = size();
     }
 
-    uint32_t getSymbolOff(const std::string& str){
-        return symSet[str];
+    //get the symbol address from a section
+    //if the symbol definition is not existed, return -1
+    uint32_t getSymbolOff(const std::string& str) {
+        if(symSet.find(str) != symSet.end())
+            return symSet[str];
+        else
+            return -1;
     }
 
     //if symbol is defined and used within one section

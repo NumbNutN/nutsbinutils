@@ -45,7 +45,6 @@ IMMEDIATE "-"?[0-9]+
 STRING_LITERAL \"[a-zA-Z_ ]+\"
 SYMBOL  [a-zA-Z0-9_]+
 
-
 R0  [rR]0
 R1  [rR]1
 R2  [rR]2
@@ -58,8 +57,6 @@ R8  [rR]8
 R9  [rR]9
 R10 [rR]10
 R11 [rR]11
-
-
 
 %%
 
@@ -104,6 +101,7 @@ R11 [rR]11
 ".string"   {return DIRECTIVE_STRING_NAME;}
 ".zero"     {return DIRECTIVE_ZERO_NAME;}
 ".align"    {return DIRECTIVE_ALIGN_NAME;}
+".global"   {return DIRECTIVE_GLOBAL_NAME;}
 
 {STRING_LITERAL}    {
 

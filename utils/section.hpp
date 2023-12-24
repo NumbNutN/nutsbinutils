@@ -2,10 +2,12 @@
 
 #include "binbuf.hpp"
 #include "directive.hpp"
+#include "elf.hpp"
 
 #include <elf.h>
 #include <iostream>
 #include <streambuf>
+#include <fstream>
 
 
 class Section{
@@ -15,27 +17,46 @@ private:
     Elf32_Shdr _sechdr;  /* section header */
     binbuf _buf;
 
+    const elf& _elfbase;
+    uint32_t sec_ndx;
+    bool _isbinding = false;
+
 protected:
     
-    Section(const std::string& name,Elf32_Word type,Elf32_Word addr,Elf32_Word flags = 0) :
+    Section(const elf& elfbase,const std::string& name,Elf32_Word type,Elf32_Word addr,Elf32_Word flags = 0) :
             _name(name),
             _sechdr({
                 .sh_type = type,
                 .sh_flags = flags,
                 .sh_addr = addr,
                 .sh_size = 0
-                }){}
-
-public:
+                }),
+            _elfbase(elfbase){}
 
     /*
      * create a section object using section header,basically use when reading from file
      * name is required when construct from a relocatable file
     */
-    Section(const std::string& name,const Elf32_Shdr& sechdr): _name(name),_sechdr(sechdr){}
+    Section(const elf& elfbase,const std::string& name,const Elf32_Shdr& sechdr): _name(name),_sechdr(sechdr),_elfbase(elfbase){}
+
+public:
 
     const Elf32_Shdr& getHeader() const{
         return _sechdr;
+    }
+
+    void setHeader(const Elf32_Shdr& shdr){
+        _sechdr = shdr;
+    }
+
+    const elf& getElfbase() const{
+        return _elfbase;
+    }
+
+    //set ndx
+    void setNdx(uint32_t ndx){
+        sec_ndx = ndx;
+        _isbinding = true;
     }
 
     const std::string& getName() const{
@@ -66,6 +87,10 @@ public:
         _sechdr.sh_name = idx;
     }
 
+    uint32_t getNameIdx(){
+        return _sechdr.sh_name;
+    }
+
     void setOffset(uint32_t off){
         _sechdr.sh_offset = off;
     }
@@ -75,14 +100,14 @@ public:
     }
 
     friend std::ostream& operator<<(std::ostream& out,Section& sec);
+    friend std::ofstream& operator<<(std::ofstream& out,Section& sec);
     friend std::istream& operator>>(std::istream& in,Section& sec);
+    friend std::ifstream& operator>>(std::ifstream& in,Section& sec);
 
     template <typename T>
-    friend Section& operator<<(Section& sec,T dat);
+    friend Section& operator<<(Section& sec,const T dat);
 
-    // friend section& operator<<(section& sec,uint32_t dat);
-
-    // friend section& operator<<(section& sec,std::string& dat);
+    friend Section& operator<<(Section& sec,const std::string& dat);
 
     template<directive_type type>
     friend Section& operator<<(Section& sec,Directive<type>& directive);
@@ -93,6 +118,7 @@ public:
 inline std::ostream& operator<<(std::ostream& out,Section& sec)
 {
     std::istream in(&sec._buf);
+    std::cout << sec._buf;
     char tmp[sec.size()];
     in.read(tmp,sec.size());
     out.write(tmp, sec.size());
@@ -113,21 +139,45 @@ inline std::istream& operator>>(std::istream& in,Section& sec){
     return in;
 }
 
+/**
+ * when a input is from a ELF, use this
+*/
+inline std::ifstream& operator>>(std::ifstream& in,Section& sec){
+    if(!sec._isbinding)throw std::exception();
+    //seek the section header
+    uint32_t pos = sec._elfbase.getSecHdrBase() + sec.sec_ndx*sizeof(Elf32_Shdr);
+    in.seekg(pos);
+    in.read((char*)&sec._sechdr,sizeof(Elf32_Shdr));
+    //seek the section offset
+    in.seekg(sec._sechdr.sh_offset);
+    (std::istream&)in >> sec;
+    return in;
+}
+
+/**
+ * when section to a ELF, use this
+*/
+inline std::ofstream& operator<<(std::ofstream& out,Section& sec){
+    if(!sec._isbinding)throw std::exception();
+    //seek the section header
+    uint32_t pos = sec._elfbase.getSecHdrBase() + sec.sec_ndx*sizeof(Elf32_Shdr);
+    out.seekp(pos);
+    out.write((char*)&sec._sechdr,sizeof(Elf32_Shdr));
+    //seek the section offset
+    out.seekp(sec._sechdr.sh_offset);
+    (std::ostream&)out << sec;
+    return out;
+}
+
 template <typename T>
-inline Section& operator<<(Section& sec,T dat){
+inline Section& operator<<(Section& sec,const T dat){
     std::ostream out(&sec._buf);
     out.write((const char*)&dat,sizeof(T));
     return sec;
 }
 
-// inline section& operator<<(section& sec,uint32_t dat){
-//     std::ostream out(&sec._buf);
-//     out.write((const char*)&dat,sizeof(uint32_t));
-//     return sec;
-// }
 
-template<>
-inline Section& operator<<(Section& sec,std::string& dat){
+inline Section& operator<<(Section& sec,const std::string& dat){
     std::ostream out(&sec._buf);
     out << dat;
     char c = '\0';

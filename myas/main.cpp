@@ -57,7 +57,7 @@ int main(int argc,char** argv)
 {
 
     //open the ELF file stream
-    std::fstream output;
+    std::ofstream output;
     output.open(argv[1],ios::out | ios::binary);
     
     FILE* fp = fopen(argv[2],"r");

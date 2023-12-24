@@ -97,6 +97,7 @@ extern char* curSymbol;
 %token <nullptr> DIRECTIVE_STRING_NAME
 %token <nullptr> DIRECTIVE_ALIGN_NAME
 %token <nullptr> DIRECTIVE_SECTION_NAME
+%token <nullptr> DIRECTIVE_GLOBAL_NAME
 
 %type <directive_word> DIRECTIVE_WORD
 %type <directive_zero> DIRECTIVE_ZERO
@@ -115,7 +116,7 @@ extern char* curSymbol;
 %type <string_literal> SYMBOL_DEFINITION
 %type <ins> INSTRUCTION
 %type <incomplete_ins> INCOMPLETE_INSTRUCTION
-%type <seq> SEQUENCE
+%type <seq> CUSTOM_SECTION
 %type <nullptr> TEXT
 
 
@@ -123,43 +124,50 @@ extern char* curSymbol;
 %%
 
 TEXT
-    : SEQUENCE                           {
+    : TEXT CUSTOM_SECTION                           {
         //as a customizable section is over
         //fill the incomplete instruction's offset if the symbol is identified within one section
-        $1->incompleteIdentified();
+        $2->incompleteIdentified();
         //instruction set over
         //add the section
-        reloobj.insert(*$1);
-        std::cout << $1->buffer();
+        reloobj.insert(*$2);
+        std::cout << $2->buffer();
         std::cout << reloobj.sectionUnitList[0].buffer();
     }
 
-SEQUENCE
-    : SEQUENCE INSTRUCTION               {
+    // add a global symbol statement to relocatable
+    | TEXT DIRECTIVE_GLOBAL_NAME SYMBOL                     {
+        reloobj.insert($3);
+    }
+
+    |                                               {}
+
+CUSTOM_SECTION
+    : CUSTOM_SECTION INSTRUCTION               {
         //counter new instruction, insert
         $1->insert(*$2);
         $$ = $1;
         // cout << bitset<32>($2->encode()) << endl;
     }
 
-    | SEQUENCE INCOMPLETE_INSTRUCTION          {
+    | CUSTOM_SECTION INCOMPLETE_INSTRUCTION          {
         //if a imcomplete instruction could be filled in a single file
         //it should change to a complete instruction before insert into relocable file
         $1->insert(*$2,curSymbol);
         $$ = $1;
     }
 
-    | SEQUENCE DIRECTIVE_WORD                  {$1->insert(*$2);$$ = $1;}
-    | SEQUENCE DIRECTIVE_ZERO                  {$1->insert(*$2);$$ = $1;}
-    | SEQUENCE DIRECTIVE_STRING                {$1->insert(*$2);$$ = $1;}
-    | SEQUENCE DIRECTIVE_ALIGN                 {$1->insert(*$2);$$ = $1;}
+    | CUSTOM_SECTION DIRECTIVE_WORD                  {$1->insert(*$2);$$ = $1;}
+    | CUSTOM_SECTION DIRECTIVE_ZERO                  {$1->insert(*$2);$$ = $1;}
+    | CUSTOM_SECTION DIRECTIVE_STRING                {$1->insert(*$2);$$ = $1;}
+    | CUSTOM_SECTION DIRECTIVE_ALIGN                 {$1->insert(*$2);$$ = $1;}
 
-    | SEQUENCE SYMBOL_DEFINITION         {$1->insert(std::string($2));$$ = $1;}
+    | CUSTOM_SECTION SYMBOL_DEFINITION         {$1->insert(std::string($2));$$ = $1;}
 
     // a section without explict statement ".section" is not allow
     | DIRECTIVE_SECTION_NAME                          {
         //create a instruction set object
-        $$ = new CustomizableSection();
+        $$ = new CustomizableSection(reloobj);
         curInstructionSet = $$;
     }
 

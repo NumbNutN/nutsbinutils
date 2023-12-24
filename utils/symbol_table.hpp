@@ -2,20 +2,17 @@
 
 #include <vector>
 #include <string>
+#include <iostream>
 
 class Symtab : public Section{
 
 private:
-    //store all the symbol
-    std::vector<Elf32_Sym> symbolList;
-
     Section& base = (Section&)*this;
 
 public:
 
-    Symtab() : Section(".symtab",SHT_SYMTAB,0x0){}
-
-    Symtab(const Elf32_Shdr& sechdr) : Section(".symtab",sechdr){}
+    /* construct when create a new relocatable or read a relocatable */
+    Symtab(const elf& elfbase) : Section(elfbase,".symtab",SHT_SYMTAB,0x0){}
 
     //insert a symbol
     void insert(uint8_t symType,Elf32_Word symName,Elf32_Word symVal,uint8_t secInc,Elf32_Word symSize = 0){
@@ -26,16 +23,32 @@ public:
             .st_info = symType,
             .st_shndx = secInc
         };
-        symbolList.push_back(symhdr);
 
         //add into buffer
         base << symhdr;
         size() += sizeof(symhdr);
     }
 
-    friend std::istream& operator>>(std::istream& in, Symtab& symtab);
+    Elf32_Sym getSymbol(uint32_t idx){
+        std::istream in(&buffer());
+        Elf32_Sym sym;
+        in.seekg(idx*sizeof(Elf32_Sym));
+        in.read((char*)&sym,sizeof(Elf32_Sym));
+        return sym;
+    }
+
+    friend std::ofstream& operator<<(std::ofstream& out,Symtab& strtbl);
+    friend std::ifstream& operator>>(std::ifstream& in,Symtab& symtab);
 };
 
-inline std::istream& operator>>(std::istream& in, Symtab& symtab){
-    
+inline std::ofstream& operator<<(std::ofstream& out,Symtab& symtab){
+    symtab.setNdx(symtab.getElfbase().getShStrTblNdx() - 2);
+    out << (Section&)symtab;
+    return out;
+}
+
+inline std::ifstream& operator>>(std::ifstream& in,Symtab& symtab){
+    symtab.setNdx(symtab.getElfbase().getShStrTblNdx() - 2);
+    in >> (Section&)symtab;
+    return in;
 }

@@ -3,7 +3,7 @@
 #include <elf.h>
 #include <memory.h>
 
-#include "section.hpp"
+#include <iostream>
 
 #include "utils.h"
 
@@ -13,6 +13,7 @@ private:
 
     //the align requirement of architecture
     uint32_t _poff = MOD(sizeof(Elf32_Ehdr),5)?ROUND(sizeof(Elf32_Ehdr),5)+(1<<5):sizeof(Elf32_Ehdr);
+
 
 protected:
     Elf32_Ehdr _ehdr;        /* ELF header */
@@ -39,8 +40,7 @@ protected:
         };
         memcpy(_ehdr.e_ident,magic,sizeof(magic));
     }
-    
-    uint32_t allocoffset(uint32_t size,uint32_t align){
+        uint32_t allocoffset(uint32_t size,uint32_t align){
         //first check if _off is align
         _poff = MOD(_poff,align)?(ROUND(_poff,align)+(1<<align)):_poff;
 
@@ -55,16 +55,32 @@ protected:
     uint32_t getcuroffset() const {
         return _poff;
     }
-    
-    friend std::ostream &operator<<(std::ostream& output,const elf &elf_struct);
+
+    friend std::ostream &operator<<(std::ostream& output,elf &elf_struct);
     friend std::istream &operator>>(std::istream& input,elf& elfobj);
 
 public:
 
+    uint32_t getSecHdrBase() const {
+        return _ehdr.e_shoff;
+    }
+
+    uint32_t getProHdrBase() const {
+        return _ehdr.e_phoff;
+    }
+
+    uint32_t getShStrTblNdx() const {
+        return _ehdr.e_shstrndx;
+    }
+
+    //TEMP
+    uint32_t& entry(){
+        return _ehdr.e_entry;
+    }
 };
 
 
-inline std::ostream &operator<<(std::ostream& output,const elf &elf_struct){
+inline std::ostream &operator<<(std::ostream& output,elf &elf_struct){
 
     //write elf header
     output.seekp(0x0, std::ios::beg);
