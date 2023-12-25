@@ -1,5 +1,6 @@
 #pragma once
 
+#include "container.hpp"
 #include "binbuf.hpp"
 #include "directive.hpp"
 #include "elf.hpp"
@@ -10,19 +11,35 @@
 #include <fstream>
 
 
-class Section{
+class Section : public Container{
 
 private:
     std::string _name;
     Elf32_Shdr _sechdr;  /* section header */
     binbuf _buf;
 
-    const elf& _elfbase;
     uint32_t sec_ndx;
     bool _isbinding = false;
 
+public:
+// container interface
+    void set_base(uint32_t new_base){
+        
+        Container::set_base(new_base);
+        //the absolute address of section
+        _sechdr.sh_offset = pos();
+    }
+
+    void set_offset(int32_t new_offset){
+
+        Container::set_offset(new_offset);
+        //the absolute address of section
+        _sechdr.sh_offset = pos();
+    }
+
+
 protected:
-    
+    const elf& _elfbase;
     Section(const elf& elfbase,const std::string& name,Elf32_Word type,Elf32_Word addr,Elf32_Word flags = 0) :
             _name(name),
             _sechdr({
@@ -91,10 +108,6 @@ public:
         return _sechdr.sh_name;
     }
 
-    void setOffset(uint32_t off){
-        _sechdr.sh_offset = off;
-    }
-
     uint32_t getOffset()const{
         return _sechdr.sh_offset;
     }
@@ -105,12 +118,6 @@ public:
 
     uint32_t flags() const{
         return _sechdr.sh_flags;
-    }
-
-    //see if the specified position is in the section
-    bool at(Elf32_Word pos){
-        if ((pos >= _sechdr.sh_offset) && (pos < (_sechdr.sh_offset + _sechdr.sh_size)))return true;
-        else return false;
     }
 
     friend std::ostream& operator<<(std::ostream& out,Section& sec);

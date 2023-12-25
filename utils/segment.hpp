@@ -9,11 +9,12 @@
 #include "binbuf.hpp"
 #include "section.hpp"
 #include "symbol_table.hpp"
+#include "container.hpp"
 
 /**
  * segment manager
  */
-class Segment {
+class Segment :public Container{
 
 private:
   binbuf _buf;
@@ -41,6 +42,15 @@ protected:
 
     return tmp;
     }
+
+public:
+
+    void set_offset(int32_t new_offset){
+        _phdr.p_offset = new_offset;
+
+        Container::set_offset(new_offset);
+    }
+
 public:
 
   Segment(Elf32_Word type, Elf32_Addr vaddr, Elf32_Addr paddr, Elf32_Word flags, Elf32_Word align)
@@ -64,48 +74,24 @@ public:
         return _phdr.p_filesz;
     }
 
-    void setOffset(uint32_t off){
-        _phdr.p_offset = off;
-
-        //also rebase all the section in a segment
-        for(Section& sec:sectionUnitList){
-            sec.setOffset(sec.getOffset() + _phdr.p_offset);
-        }
-    }
-
     /* insert section into segment for management
      * also copy the content
+     * call container::insert
     */
     void insert(Section& sec){
         
         uint32_t pos = allocoffset(sec.size(),3);
-        sec.setOffset(pos);
+        sec.set_offset(pos);
+
+        //add section into container management
         sectionUnitList.push_back(sec);
+        Container::insert(sectionUnitList.back());
 
         *this << sec;
         //refresh file size of segment
         _phdr.p_filesz = pos + sec.size();
         //refresh memory size of segment
         _phdr.p_memsz = pos + sec.size();
-    }
-
-    //relocate should be called after segment get a offset
-    void relocate(Symtab& symtab){
-
-        //relocate the symbol in section
-        
-        for(int i=0;i< symtab.symbolNum();++i){
-            Elf32_Sym sym = symtab.getSymbol(i);
-            //Step 1: search the symbol table and find out which section they belong to
-            for(Section& sec:sectionUnitList){
-                if(sec.at(sym.st_value)){
-                    //Step 2:rebase the symbol due to the section's new base
-                    symtab.rebase(i, sec.getOffset());
-                }
-            }
-        }
-
-
     }
 
     Elf32_Phdr getHeader() const{
