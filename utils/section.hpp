@@ -95,8 +95,22 @@ public:
         _sechdr.sh_offset = off;
     }
 
+    uint32_t getOffset()const{
+        return _sechdr.sh_offset;
+    }
+
+    void setAddr(uint32_t addr){
+        _sechdr.sh_addr = addr;
+    }
+
     uint32_t flags() const{
         return _sechdr.sh_flags;
+    }
+
+    //see if the specified position is in the section
+    bool at(Elf32_Word pos){
+        if ((pos >= _sechdr.sh_offset) && (pos < (_sechdr.sh_offset + _sechdr.sh_size)))return true;
+        else return false;
     }
 
     friend std::ostream& operator<<(std::ostream& out,Section& sec);

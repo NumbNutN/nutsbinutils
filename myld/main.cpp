@@ -80,23 +80,22 @@ int main(int argc,char* argv[]){
     //combine the file
     for(auto unit:map){
         
+        std::vector<Section>& section_list = unit.second;
         Elf32_Word flags = secFlag2ProFlag(unit.first);
         
         //judge if there's section with that flag
-        if(unit.second.empty())continue;
+        if(section_list.empty())continue;
 
         //create a program header for section sets with this flag
         Segment seg(PT_LOAD,0x0,0x0,flags,size2shift(sysconf(_SC_PAGE_SIZE)));
 
         //insert all the section content to segment
-        for(Section& sec:unit.second){
+        for(Section& sec:section_list){
             seg.insert(sec);
         }
 
-        //linking the section before segment insert to exec
-        seg.link();
-
         exec_obj.insert(seg);
+        
     }
 
     //arange the executable file

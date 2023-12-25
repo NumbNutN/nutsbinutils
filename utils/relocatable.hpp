@@ -117,6 +117,15 @@ public:
         global_sym_list.push_back(sym);
         
     }
+    
+    //relocatable should return the section that include the position
+    CustomizableSection& at(uint32_t pos){
+        for(auto it = sectionUnitList.begin();it != sectionUnitList.end();++it){
+            if(it->getHeader().sh_offset > pos){
+                return *(it-1);
+            }
+        }
+    }
 
 
     friend std::ofstream &operator<<(std::ofstream& output,Relocatable &relo);
