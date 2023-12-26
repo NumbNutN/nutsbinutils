@@ -50,7 +50,18 @@ public:
 
         Container::set_offset(new_offset);
     }
+    virtual Segment& operator+=(int32_t num){
+        (Sequence&)*this += num;
+        _phdr.p_filesz += num;
+        _phdr.p_memsz += num;
+        return *this;
+    }
 
+    virtual Segment& operator-=(int32_t num){
+        (Sequence&)*this -= num;
+        _phdr.p_memsz -= num;
+        return *this;
+    }  
 public:
 
   Segment(Elf32_Word type, Elf32_Addr vaddr, Elf32_Addr paddr, Elf32_Word flags, Elf32_Word align)
@@ -70,10 +81,6 @@ public:
         return _buf;
     }
 
-    uint32_t& size(){
-        return _phdr.p_filesz;
-    }
-
     /* insert section into segment for management
      * also copy the content
      * call container::insert
@@ -87,7 +94,7 @@ public:
         sectionUnitList.push_back(sec);
         Container::insert(sectionUnitList.back());
 
-        *this << sec;
+        (Container&)*this << (Sequence&)sec;
         //refresh file size of segment
         _phdr.p_filesz = pos + sec.size();
         //refresh memory size of segment
@@ -98,19 +105,11 @@ public:
         return _phdr;
     }
 
-    friend Segment& operator<<(Segment& seg,Section& sec);
-
-    friend std::ostream& operator<<(std::ostream& out,Segment& seg);
+    friend std::ofstream& operator<<(std::ofstream& out,Segment& seg);
 };
 
-inline Segment& operator<<(Segment& seg,Section& sec){
-    std::ostream out(&seg._buf);
-    out << sec;
-    return seg;
-}
-
 //segment operator<< has no right to change the get area pointer
-inline std::ostream& operator<<(std::ostream& out,Segment& seg)
+inline std::ofstream& operator<<(std::ofstream& out,Segment& seg)
 {
     std::istream in(&seg._buf);
     //write as segment size says

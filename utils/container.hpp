@@ -31,4 +31,17 @@ protected:
     void insert(Sequence& obj){
         _seq_maintain_list.push_back(&obj);
     }
+
+    //insert a sequence that really go into effect after a moment
+    // void insertLater(Sequence& obj){
+
+    // }
+
+    friend Container& operator<<(Container& seg,Sequence& sec);
 };
+
+inline Container& operator<<(Container& seg,Sequence& sec){
+    std::ostream out(&seg._buf);
+    out << sec;
+    return seg;
+}
