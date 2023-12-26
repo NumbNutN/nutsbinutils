@@ -10,6 +10,7 @@
 #include "instruction.hpp"
 #include "customizable_section.hpp"
 #include "relocatable.hpp"
+#include "symbol.hpp"
 
 #include <iostream>
 #include <bitset>
@@ -68,6 +69,9 @@ extern char* curSymbol;
     Directive<ZERO>* directive_zero;
     Directive<ALIGN>* directive_align;
     Directive<STRING>* directive_string;
+
+    //symbol
+    Symbol* symbol;
     
 }
 
@@ -89,7 +93,7 @@ extern char* curSymbol;
 
 %token <string_literal> STRING_LITERAL /* 字符串字面量 */
 
-%token <string_literal> SYMBOL      /* 符号 */
+%token <string_literal> SYMBOL_NAME      /* 符号 */
 
 //directives
 %token <nullptr> DIRECTIVE_WORD_NAME
@@ -103,6 +107,7 @@ extern char* curSymbol;
 %type <directive_zero> DIRECTIVE_ZERO
 %type <directive_string> DIRECTIVE_STRING
 %type <directive_align> DIRECTIVE_ALIGN
+%type <symbol> SYMBOL           /* 符号 */
 
 %type <mnemonic> MNEMONIC           /* 指令助记符 */
 
@@ -113,7 +118,6 @@ extern char* curSymbol;
 %type <op2> OPERAND2            /* 灵活第二操作数 */
 %type <off> OFFSET              /* offset */
 
-%type <string_literal> SYMBOL_DEFINITION
 %type <ins> INSTRUCTION
 %type <incomplete_ins> INCOMPLETE_INSTRUCTION
 %type <seq> CUSTOM_SECTION
@@ -136,8 +140,10 @@ TEXT
     }
 
     // add a global symbol statement to relocatable
-    | TEXT DIRECTIVE_GLOBAL_NAME SYMBOL                     {
-        reloobj.insert($3);
+    | TEXT DIRECTIVE_GLOBAL_NAME SYMBOL_NAME                     {
+        //create a global symbol
+        Symbol sym($3,GLOBAL);
+        reloobj.insert(sym);
     }
 
     |                                               {}
@@ -162,7 +168,7 @@ CUSTOM_SECTION
     | CUSTOM_SECTION DIRECTIVE_STRING                {$1->insert(*$2);$$ = $1;}
     | CUSTOM_SECTION DIRECTIVE_ALIGN                 {$1->insert(*$2);$$ = $1;}
 
-    | CUSTOM_SECTION SYMBOL_DEFINITION         {$1->insert(std::string($2));$$ = $1;}
+    | CUSTOM_SECTION SYMBOL                          {$1->insert(*$2);$$ = $1;}
 
     // a section without explict statement ".section" is not allow
     | DIRECTIVE_SECTION_NAME                          {
@@ -213,7 +219,7 @@ INSTRUCTION
 
 INCOMPLETE_INSTRUCTION
     /* LDR REG, =LABEL */
-    : MNEMONIC RD ',' '=' SYMBOL                {
+    : MNEMONIC RD ',' '=' SYMBOL_NAME                {
         //record the incomplete instruction need to be identified later
         Operand<Rn> pc(PC);
         $$ = new Instruction<INCOMPLETE_INS>(*$1,*$2,pc,Instruction<INCOMPLETE_INS>::PRE,Instruction<INCOMPLETE_INS>::NOWRITEBACK);
@@ -266,7 +272,7 @@ DIRECTIVE_ALIGN
         $$ = new Directive<ALIGN>($2,curInstructionSet->size());
     }
 
-SYMBOL_DEFINITION
-    : SYMBOL ':'    {strcpy($$,$1);}
+SYMBOL
+    : SYMBOL_NAME ':'    {$$ = new Symbol($1,LOCAL);}
 
 %%

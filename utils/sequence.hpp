@@ -4,11 +4,11 @@
 class Sequence{
 
 protected:
-    uint32_t _base;
-    uint32_t _offset;
+    uint32_t _base = 0;
+    int32_t _offset = 0;
 
 public:
-    uint32_t pos(){
+    uint32_t pos() const{
         return _base + _offset;
     }
 

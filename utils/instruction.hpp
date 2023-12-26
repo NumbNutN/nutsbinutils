@@ -2,6 +2,8 @@
 
 #include "mnemonic.hpp"
 #include "operand.hpp"
+#include "symbol.hpp"
+#include "sequence.hpp"
 
 #include <initializer_list>
 
@@ -11,7 +13,7 @@ enum instruction_type{
 };
 
 template <instruction_type type>
-class Instruction{
+class Instruction : public Sequence{
 
 public:
     enum PrePostIndex{
@@ -94,6 +96,11 @@ public:
 
     uint32_t encode() const {
         return code;
+    }
+
+    void use(const Symbol& sym){
+        // PC relative address
+        code + sym.pos() - pos() - 8;
     }
     /**
      * MUL Rd Rn Rs Rm
