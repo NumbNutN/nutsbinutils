@@ -4,6 +4,7 @@
 #include "operand.hpp"
 #include "symbol.hpp"
 #include "sequence.hpp"
+#include "relocation_entry.hpp"
 
 #include <initializer_list>
 
@@ -13,7 +14,7 @@ enum instruction_type{
 };
 
 template <instruction_type type>
-class Instruction : public Sequence{
+class Instruction : public Rel<R_ARM_REL32>{
 
 public:
     enum PrePostIndex{
@@ -46,6 +47,7 @@ public:
     */
     Instruction(const Mnemonic& mnemonic){
         code |= mnemonic.encode();
+        *this << code;
     }
 
     /**
@@ -56,6 +58,7 @@ public:
         code |= rd.encode();
         code |= rn.encode();
         code |= op2.encode();
+        *this << code;
     }
     /**
      * Mov rd op2
@@ -73,6 +76,7 @@ public:
         code |= off.encode();
         code |= (prePostIndexingBit << prePostIndexingBitIdx);
         code |= (writeBack << writeBackBitIdx);
+        *this << code;
     }
     /* incomplete instruction */
     Instruction(const Mnemonic& mnemonic,Operand<Rd>& rd,Operand<Rn>& rn,PrePostIndex prePostIndexingBit, WriteBack writeBack);
@@ -82,26 +86,8 @@ public:
     */
     Instruction(const Mnemonic& mnemonic,Operand<Rd>& rd,Operand<Rn>& rn):
         Instruction(mnemonic,rd,rn,none_offset){}
-
-    /*
-        * Construct a instruction only incomplete instruction
-        * This is only happen when an incomplete instruction turn into a complete once
-    */    
-    // Instruction(const Instruction<INCOMPLETE_INS>& ins);
     
-    /* set the offset section of a instruction 
-     * for incomplete instruction only
-    */
-    void setOff(Operand<Off>&);
 
-    uint32_t encode() const {
-        return code;
-    }
-
-    void use(const Symbol& sym){
-        // PC relative address
-        code + sym.pos() - pos() - 8;
-    }
     /**
      * MUL Rd Rn Rs Rm
     */
@@ -114,18 +100,5 @@ inline Instruction<INCOMPLETE_INS>::Instruction(const Mnemonic& mnemonic,Operand
     code |= rn.encode();
     code |= (prePostIndexingBit << prePostIndexingBitIdx);
     code |= (writeBack << writeBackBitIdx);
+    *this << code;
 }
-
-
-// template<>
-// inline Instruction<COMPLETE_INS>::Instruction(const Instruction<INCOMPLETE_INS>& ins){
-//     code = ins.encode();
-// }
-
-template<>
-inline void Instruction<INCOMPLETE_INS>::setOff(Operand<Off>& off){
-    code |= off.encode();
-}
-
-// template<instruction_type type>
-// inline Instruction<type>::Instruction(const Instruction<type>& ins) = default;

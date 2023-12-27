@@ -4,40 +4,40 @@
 #include <elf.h>
 
 #include "sequence.hpp"
+#include "relocation_entry.hpp"
 
 
-enum SymbolBindingType{
-    LOCAL,
-    GLOBAL
-};
-
-class Symbol : public Sequence{
+class Symbol : public Rel<R_ARM_ABS32>{
 
 public:
 // sequence interface
     virtual void set_base(uint32_t new_base) override{
 
-        for(BindingItem& seq:binding_table){
+        for(Rel<R_ARM_ABS32>& rel:abs_binding_table){
             // refill new address
-            if(seq.bind_type == R_ARM_ABS32){}
+            rel.relocate(pos());
+        }
+
+        for(Rel<R_ARM_REL32>& rel:rel_binding_table){
+            rel.relocate(pos());
         }
     }
-public:
-    struct BindingItem{
-        Sequence seq;
-        uint32_t bind_type;
-    };
+
 public:
     std::string _name;
-    SymbolBindingType _type;
+    unsigned char _type;
     //Record offsets that require repositioning
-    std::vector<BindingItem>binding_table;
-    Symbol(const std::string& name,SymbolBindingType type = LOCAL):_name(name),_type(type){
+    std::vector<Rel<R_ARM_ABS32>>abs_binding_table;
+    std::vector<Rel<R_ARM_REL32>>rel_binding_table;
+    Symbol(const std::string& name,unsigned char type = STB_LOCAL):_name(name),_type(type){
         set_base(0);
     }
 
-    void bind(const Sequence& seq,uint32_t bind_type){
-        binding_table.push_back({seq,bind_type});
+    void bind(const Rel<R_ARM_ABS32>& rel){
+        abs_binding_table.push_back(rel);
     }
     
+    void bind(const Rel<R_ARM_REL32>& rel){
+        rel_binding_table.push_back(rel);
+    }
 };

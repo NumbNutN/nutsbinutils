@@ -1,15 +1,36 @@
 #pragma once
 #include <stdint.h>
 
-#include "sequence.hpp"
-
 #include <vector>
 
+#include "sequence.hpp"
+
+#include "utils.h"
+
+template <uint32_t align>
 class Container: public Sequence{
 
 private:
     std::vector<Sequence*> _seq_maintain_list;
+
+    uint32_t alloc_offset(uint32_t size){
+
+        //first check if _off is align
+        _poff = MOD(_poff,align)?(ROUND(_poff,align)+(1<<align)):_poff;
+
+        //count a new size
+        _size = _poff + size;
+        //align the request size
+        uint32_t tmp = _poff;
+        uint32_t sz = MOD(size,align)?(ROUND(size,align)+(1<<align)):size;
+        _poff += sz;
+
+        return tmp;
+    }
+
 protected:
+    uint32_t _poff = 0;
+
     //set the offset of self
     //reset the offset
     virtual void set_base(uint32_t new_base){
@@ -27,21 +48,20 @@ protected:
         }        
     }
 
-    //insert a sequence
-    void insert(Sequence& obj){
-        _seq_maintain_list.push_back(&obj);
-    }
-
-    //insert a sequence that really go into effect after a moment
-    // void insertLater(Sequence& obj){
-
-    // }
-
-    friend Container& operator<<(Container& seg,Sequence& sec);
+    template <uint32_t align2>
+    friend Container<align2>& operator<<(Container<align2>& seg,Sequence& sec);
 };
 
-inline Container& operator<<(Container& seg,Sequence& sec){
-    std::ostream out(&seg._buf);
-    out << sec;
-    return seg;
+template <uint32_t align>
+inline Container<align>& operator<<(Container<align>& ctn,Sequence& seq){
+    ctn._seq_maintain_list.push_back(&seq);
+    uint32_t off = ctn.alloc_offset(seq.size());
+    seq.set_offset(off);
+    seq.set_base(ctn.pos());
+
+    std::ostream out(&ctn._buf);
+    out.seekp(off);
+    out << seq;
+
+    return ctn;
 }

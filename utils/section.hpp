@@ -10,8 +10,8 @@
 #include <streambuf>
 #include <fstream>
 
-
-class Section : public Container{
+template <uint32_t align>
+class Section : public Container<align>{
 
 private:
     std::string _name;
@@ -24,29 +24,17 @@ public:
 // container interface
     void set_base(uint32_t new_base){
         
-        Container::set_base(new_base);
+        Container<align>::set_base(new_base);
         //the absolute address of section
-        _sechdr.sh_offset = pos();
+        _sechdr.sh_offset = Container<align>::pos();
     }
 
     void set_offset(int32_t new_offset){
 
-        Container::set_offset(new_offset);
+        Container<align>::set_offset(new_offset);
         //the absolute address of section
-        _sechdr.sh_offset = pos();
+        _sechdr.sh_offset = Container<align>::pos();
     }
-    
-    virtual Section& operator+=(int32_t num){
-        (Sequence&)*this += num;
-        _sechdr.sh_size += num;
-        return *this;
-    }
-
-    virtual Section& operator-=(int32_t num){
-        (Sequence&)*this -= num;
-        _sechdr.sh_size -= num;
-        return *this;
-    }    
 
 protected:
     const elf& _elfbase;
@@ -116,12 +104,23 @@ public:
     template<directive_type type>
     friend Section& operator<<(Section& sec,Directive<type>& directive);
 
+    
+    friend Section<align>& operator<<(Section<align>& ctn,Sequence& seq);
+
 };
+
+template <uint32_t align>
+inline Section<align>& operator<<(Section<align>& ctn,Sequence& seq){
+    (Container<align>&)ctn << seq;
+    ctn._sechdr.sh_size = ctn.size();
+    return ctn;
+}
 
 /**
  * when a input is from a ELF, use this
 */
-inline std::ifstream& operator>>(std::ifstream& in,Section& sec){
+template <uint32_t align>
+inline std::ifstream& operator>>(std::ifstream& in,Section<align>& sec){
     if(!sec._isbinding)throw std::exception();
     //seek the section header
     uint32_t pos = sec._elfbase.getSecHdrBase() + sec.sec_ndx*sizeof(Elf32_Shdr);
@@ -141,7 +140,8 @@ inline std::ifstream& operator>>(std::ifstream& in,Section& sec){
 /**
  * when section to a ELF, use this
 */
-inline std::ofstream& operator<<(std::ofstream& out,Section& sec){
+template <uint32_t align>
+inline std::ofstream& operator<<(std::ofstream& out,Section<align>& sec){
     if(!sec._isbinding)throw std::exception();
     //seek the section header
     uint32_t pos = sec._elfbase.getSecHdrBase() + sec.sec_ndx*sizeof(Elf32_Shdr);
@@ -153,8 +153,8 @@ inline std::ofstream& operator<<(std::ofstream& out,Section& sec){
     return out;
 }
 
-template<directive_type type>
-inline Section& operator<<(Section& sec,Directive<type>& directive){
+template<uint32_t align,directive_type type>
+inline Section<align>& operator<<(Section<align>& sec,Directive<type>& directive){
     std::ostream out(&sec._buf);
     out << directive;
     return sec;

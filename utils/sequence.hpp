@@ -37,16 +37,6 @@ public:
         return _buf;
     }
 
-    virtual Sequence& operator+=(int32_t num){
-        _size += num;
-        return *this;
-    }
-
-    virtual Sequence& operator-=(int32_t num){
-        _size -= num;
-        return *this;
-    }    
-
     template <typename T>
     friend Sequence& operator<<(Sequence&,const T);
 
@@ -60,16 +50,18 @@ template <typename T>
 inline Sequence& operator<<(Sequence& seq,const T dat){
     std::ostream out(&seq._buf);
     out.write((const char*)&dat,sizeof(T));
+    seq._size += sizeof(T);
     return seq;
 }
 
 
-inline Sequence& operator<<(Sequence& sec,const std::string& dat){
-    std::ostream out(&sec._buf);
+inline Sequence& operator<<(Sequence& seq,const std::string& dat){
+    std::ostream out(&seq._buf);
     out << dat;
     char c = '\0';
     out.write(&c,sizeof(char));
-    return sec;
+    seq._size += dat.size() + 1;
+    return seq;
 }
 
 inline std::ostream& operator<<(std::ostream& out,Sequence& seq)

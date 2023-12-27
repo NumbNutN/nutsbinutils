@@ -14,34 +14,14 @@
 /**
  * segment manager
  */
-class Segment :public Container{
+class Segment :public Container<3>{
 
 private:
   binbuf _buf;
   Elf32_Phdr _phdr; /* segement header */
-    uint32_t _poff  =0;
-    //section list
-    std::vector<Section> sectionUnitList;
 
-    //position within segment and section list
-    std::unordered_map<uint32_t,Section> section_set;
 protected:
 
-    uint32_t allocoffset(uint32_t size,uint32_t align){
-    //first check if _off is align
-    _poff = MOD(_poff,align)?(ROUND(_poff,align)+(1<<align)):_poff;
-
-    //align the request mem size
-    uint32_t tmp = _poff;
-    uint32_t map_sz = MOD(size,align)?(ROUND(size,align)+(1<<align)):size;
-    _poff += map_sz;
-
-    //seek the pointer
-    std::ostream out(&_buf);
-    out.seekp(_poff);
-
-    return tmp;
-    }
 
 public:
 
@@ -50,18 +30,7 @@ public:
 
         Container::set_offset(new_offset);
     }
-    virtual Segment& operator+=(int32_t num){
-        (Sequence&)*this += num;
-        _phdr.p_filesz += num;
-        _phdr.p_memsz += num;
-        return *this;
-    }
 
-    virtual Segment& operator-=(int32_t num){
-        (Sequence&)*this -= num;
-        _phdr.p_memsz -= num;
-        return *this;
-    }  
 public:
 
   Segment(Elf32_Word type, Elf32_Addr vaddr, Elf32_Addr paddr, Elf32_Word flags, Elf32_Word align)
@@ -81,30 +50,11 @@ public:
         return _buf;
     }
 
-    /* insert section into segment for management
-     * also copy the content
-     * call container::insert
-    */
-    void insert(Section& sec){
-        
-        uint32_t pos = allocoffset(sec.size(),3);
-        sec.set_offset(pos);
-
-        //add section into container management
-        sectionUnitList.push_back(sec);
-        Container::insert(sectionUnitList.back());
-
-        (Container&)*this << (Sequence&)sec;
-        //refresh file size of segment
-        _phdr.p_filesz = pos + sec.size();
-        //refresh memory size of segment
-        _phdr.p_memsz = pos + sec.size();
-    }
-
     Elf32_Phdr getHeader() const{
         return _phdr;
     }
 
+    friend Segment& operator<<(Segment& ctn,Sequence& seq);
     friend std::ofstream& operator<<(std::ofstream& out,Segment& seg);
 };
 
@@ -120,4 +70,11 @@ inline std::ofstream& operator<<(std::ofstream& out,Segment& seg)
     out.flush();
 
     return out;
+}
+
+inline Segment& operator<<(Segment& ctn,Sequence& seq){
+    (Container<3>&) ctn << seq;
+    ctn._phdr.p_filesz = ctn.size();
+    ctn._phdr.p_memsz = ctn.size();
+    return ctn;
 }
