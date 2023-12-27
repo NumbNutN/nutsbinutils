@@ -2,6 +2,7 @@
 
 #include "binbuf.hpp"
 #include "section.hpp"
+#include "symbol.hpp"
 
 #include <iostream>
 
@@ -10,7 +11,7 @@ enum StrTblType{
     SHSTRTBL
 };
 
-class strtbl : public Section{
+class strtbl : public Section<0>{
 
 private:
     StrTblType _type;
@@ -25,11 +26,13 @@ public:
     }
 
     uint32_t insert(const std::string& name){
-        size_t tmp = Section::size();
+        uint32_t tmp = size();
         base << name;
-        std::cout << buffer();
-        Section::size() += (name.length() + 1);
         return tmp;
+    }
+
+    uint32_t insert(const Symbol& sym){
+        return insert(sym._name);
     }
 
     std::string getName(uint32_t index){
@@ -42,24 +45,24 @@ public:
         return str;
     }
 
-    friend std::ofstream& operator<<(std::ofstream& out,strtbl& strtbl);
-    friend std::ifstream& operator>>(std::ifstream& in,strtbl& strtbl);
+    // friend std::ofstream& operator<<(std::ofstream& out,strtbl& strtbl);
+    // friend std::ifstream& operator>>(std::ifstream& in,strtbl& strtbl);
 };
 
-inline std::ofstream& operator<<(std::ofstream& out,strtbl& strtbl){
-    if(strtbl._type == STRTBL)
-        strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx() - 1);
-    else if(strtbl._type == SHSTRTBL)
-        strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx());
-    out << (Section&)strtbl;
-    return out;
-}
+// inline std::ofstream& operator<<(std::ofstream& out,strtbl& strtbl){
+//     if(strtbl._type == STRTBL)
+//         strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx() - 1);
+//     else if(strtbl._type == SHSTRTBL)
+//         strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx());
+//     out << (Section&)strtbl;
+//     return out;
+// }
 
-inline std::ifstream& operator>>(std::ifstream& in,strtbl& strtbl){
-    if(strtbl._type == STRTBL)
-        strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx() - 1);
-    else if(strtbl._type == SHSTRTBL)
-        strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx());
-    in >> (Section&)strtbl;
-    return in;
-}
+// inline std::ifstream& operator>>(std::ifstream& in,strtbl& strtbl){
+//     if(strtbl._type == STRTBL)
+//         strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx() - 1);
+//     else if(strtbl._type == SHSTRTBL)
+//         strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx());
+//     in >> (Section&)strtbl;
+//     return in;
+// }

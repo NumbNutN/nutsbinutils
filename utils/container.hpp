@@ -48,6 +48,10 @@ protected:
         }        
     }
 
+    uint32_t get_cur_offset(){
+        return _poff;
+    }
+
     template <uint32_t align2>
     friend Container<align2>& operator<<(Container<align2>& seg,Sequence& sec);
 };

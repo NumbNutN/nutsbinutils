@@ -1,13 +1,13 @@
 #include "section.hpp"
+#include "symbol.hpp"
 
 #include <vector>
 #include <string>
 #include <iostream>
 
-class Symtab : public Section{
+class Symtab : public Section<0>{
 
 private:
-    Section& base = (Section&)*this;
     uint8_t _symbol_num = 0;
 public:
 
@@ -25,9 +25,20 @@ public:
         };
 
         //add into buffer
-        base << symhdr;
-        size() += sizeof(symhdr);
+        *this << symhdr;
         _symbol_num++;
+    }
+
+    uint32_t insert(Symbol& sym,Elf32_Word symName,uint8_t secInc){
+        Elf32_Sym symhdr = {
+            .st_name = symName,
+            .st_value = sym.pos(),
+            .st_size = sym.size(),
+            .st_info = sym._type,
+            .st_shndx = secInc
+        };
+        *this << symhdr;
+        return _symbol_num++;
     }
 
     Elf32_Sym getSymbol(uint32_t idx){
@@ -36,15 +47,6 @@ public:
         in.seekg(idx*sizeof(Elf32_Sym));
         in.read((char*)&sym,sizeof(Elf32_Sym));
         return sym;
-    }
-
-    //rebase the symbol with specified idx
-    void rebase(uint32_t idx,Elf32_Word newbase){
-        Elf32_Sym sym = getSymbol(idx);
-        sym.st_value += newbase;
-        std::ostream out(&buffer());
-        out.seekp(idx*sizeof(Elf32_Sym));
-        base << sym;
     }
 
     uint8_t symbolNum(){
@@ -57,13 +59,13 @@ public:
 
 inline std::ofstream& operator<<(std::ofstream& out,Symtab& symtab){
     symtab.setNdx(symtab.getElfbase().getShStrTblNdx() - 2);
-    out << (Section&)symtab;
+    out << (Section<0>&)symtab;
     return out;
 }
 
 inline std::ifstream& operator>>(std::ifstream& in,Symtab& symtab){
     symtab.setNdx(symtab.getElfbase().getShStrTblNdx() - 2);
-    in >> (Section&)symtab;
+    in >> (Section<0>&)symtab;
     symtab._symbol_num = symtab.size() / sizeof(Elf32_Sym);
     return in;
 }
