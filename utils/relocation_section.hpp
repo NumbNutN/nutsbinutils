@@ -2,10 +2,11 @@
 #include "customizable_section.hpp"
 #include "relocation_entry.hpp"
 
-#include <string>
+#include "utils.h"
 
+#include <string>
 #include <elf.h>
-class ReloSection: public Section<0>{
+class ReloSection: public Section{
 
 public:
     /* construct when create a new relocatable or read a relocatable */

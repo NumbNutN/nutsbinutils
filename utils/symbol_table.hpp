@@ -5,7 +5,7 @@
 #include <string>
 #include <iostream>
 
-class Symtab : public Section<0>{
+class Symtab : public Section{
 
 private:
     uint8_t _symbol_num = 0;
@@ -59,13 +59,13 @@ public:
 
 inline std::ofstream& operator<<(std::ofstream& out,Symtab& symtab){
     symtab.setNdx(symtab.getElfbase().getShStrTblNdx() - 2);
-    out << (Section<0>&)symtab;
+    out << (Section&)symtab;
     return out;
 }
 
 inline std::ifstream& operator>>(std::ifstream& in,Symtab& symtab){
     symtab.setNdx(symtab.getElfbase().getShStrTblNdx() - 2);
-    in >> (Section<0>&)symtab;
+    in >> (Section&)symtab;
     symtab._symbol_num = symtab.size() / sizeof(Elf32_Sym);
     return in;
 }

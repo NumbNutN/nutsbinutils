@@ -11,7 +11,7 @@ enum StrTblType{
     SHSTRTBL
 };
 
-class strtbl : public Section<0>{
+class strtbl : public Section{
 
 private:
     StrTblType _type;

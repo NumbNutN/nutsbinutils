@@ -11,10 +11,12 @@
 #include "symbol_table.hpp"
 #include "container.hpp"
 
+#include "utils.h"
+
 /**
  * segment manager
  */
-class Segment :public Container<3>{
+class Segment :public Container<SEGMENT_ALIGN>{
 
 private:
   binbuf _buf;

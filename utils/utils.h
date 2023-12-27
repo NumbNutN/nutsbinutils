@@ -4,3 +4,9 @@
 // ROUND(x,align)   EQU    x - MOD(x,p->p_align)
 
 int size2shift(int size);
+
+#define CUSTOM_SECTION_ALIGN    0
+#define RELO_TABLE_ALIGN        0
+#define SYMBOL_TABLE_ALIGN      0
+#define SEGMENT_ALIGN           3
+#define ELF_ALIGN               4

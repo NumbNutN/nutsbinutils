@@ -4,16 +4,13 @@
 #include <memory.h>
 
 #include <iostream>
+#include <fstream>
 
 #include "utils.h"
 
-class elf{
+#include "Container.hpp"
 
-private:
-
-    //the align requirement of architecture
-    uint32_t _poff = MOD(sizeof(Elf32_Ehdr),5)?ROUND(sizeof(Elf32_Ehdr),5)+(1<<5):sizeof(Elf32_Ehdr);
-
+class elf : public Container<ELF_ALIGN>{
 
 protected:
     Elf32_Ehdr _ehdr;        /* ELF header */
@@ -39,25 +36,12 @@ protected:
             ELFMAG0,ELFMAG1,ELFMAG2,ELFMAG3,ELFCLASS32,ELFDATA2LSB,EV_CURRENT,ELFOSABI_SYSV,0
         };
         memcpy(_ehdr.e_ident,magic,sizeof(magic));
-    }
-        uint32_t allocoffset(uint32_t size,uint32_t align){
-        //first check if _off is align
-        _poff = MOD(_poff,align)?(ROUND(_poff,align)+(1<<align)):_poff;
-
-        //align the request mem size
-        uint32_t tmp = _poff;
-        uint32_t map_sz = MOD(size,align)?(ROUND(size,align)+(1<<align)):size;
-        _poff += map_sz;
-
-        return tmp;
+            //the align requirement of architecture
+        _poff = MOD(sizeof(Elf32_Ehdr),5)?ROUND(sizeof(Elf32_Ehdr),5)+(1<<5):sizeof(Elf32_Ehdr);
     }
 
-    uint32_t getcuroffset() const {
-        return _poff;
-    }
-
-    friend std::ostream &operator<<(std::ostream& output,elf &elf_struct);
-    friend std::istream &operator>>(std::istream& input,elf& elfobj);
+    friend std::ofstream &operator<<(std::ofstream& output,elf &elf_struct);
+    friend std::ifstream &operator>>(std::ifstream& input,elf& elfobj);
 
 public:
 
@@ -80,7 +64,7 @@ public:
 };
 
 
-inline std::ostream &operator<<(std::ostream& output,elf &elf_struct){
+inline std::ofstream &operator<<(std::ofstream& output,elf &elf_struct){
 
     //write elf header
     output.seekp(0x0, std::ios::beg);
@@ -90,7 +74,7 @@ inline std::ostream &operator<<(std::ostream& output,elf &elf_struct){
     return output;
 }
 
-inline std::istream &operator>>(std::istream& input,elf& elfobj){
+inline std::ifstream &operator>>(std::ifstream& input,elf& elfobj){
 
     //read elf header
     //elf header always on the offset 0x0
