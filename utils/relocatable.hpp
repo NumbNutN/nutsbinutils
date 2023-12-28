@@ -29,11 +29,6 @@ private:
     //wait for setting to global symbol
     std::vector<std::string> global_sym_list;
 
-    //the section header table
-    class SectionHdrTbl :public Sequence{
-
-    };
-
     SectionHdrTbl section_hdr_tbl;
 
 public:
@@ -122,8 +117,7 @@ public:
         
     }
 
-    template <uint32_t align2>
-    friend Relocatable& operator<<(Relocatable&,Section<align2>&);
+    friend Relocatable& operator<<(Relocatable&,Section&);
 
     friend Relocatable& operator<<(Relocatable& relo,CustomizableSection& sec);
 
@@ -136,7 +130,7 @@ public:
 inline Relocatable& operator<<(Relocatable& relo,CustomizableSection& sec){
     
     //add into buffer
-    relo << (Section<0>&)sec;
+    relo << (Section&)sec;
 
     //add the customizable section into list
     relo.cus_section_list.push_back(sec);
@@ -162,12 +156,11 @@ inline Relocatable& operator<<(Relocatable& relo,CustomizableSection& sec){
     if(relotbl.size())
     {
         relo.relo_section_list.push_back(relotbl);
-        relo << (Section<0>&)relotbl;
+        relo << (Section&)relotbl;
     }
 }
 
-template <uint32_t align>
-inline Relocatable& operator<<(Relocatable& relo,Section<align>& seq){
+inline Relocatable& operator<<(Relocatable& relo,Section& seq){
 
         //first insert the section name to shstrtbl
         //remember shstrtbl will also call this api
@@ -186,23 +179,11 @@ inline std::ofstream &operator<<(std::ofstream& output,Relocatable &relo){
     //first output elf header
     output << relo.base;
 
-    //construct the symtab and strtab
+    //output the relo
+    (std::ostream&)output << relo;
 
-    //write section header table & sections
-
-    //write symbol table
-    output << relo.symtbl;
-
-    //write string table
-    output << relo.string_table;
-
-    //write section string table
-    output << relo.shstrtbl;
-
-    //write each customizatable section
-    for(Section& sec:relo.sectionUnitList){
-        output << sec;
-    }
+    //output the section header table
+    output << relo.section_hdr_tbl;
 
     return output;
 }
@@ -210,38 +191,123 @@ inline std::ofstream &operator<<(std::ofstream& output,Relocatable &relo){
 /**
  * read a relocable file
 */
-inline std::ifstream &operator>>(std::ifstream& input,Relocatable &relo){
+// inline std::ifstream &operator>>(std::ifstream& input,Relocatable &relo){
 
-    int idx = 0;
-    //read elf header
-    input >> relo.base;
+//     int idx = 0;
+//     //read elf header
+//     input >> relo.base;
 
-    //read the section string table first
-    input >> relo.shstrtbl;
+//     //read the section string table first
+//     input >> relo.shstrtbl;
 
-    //read the customizatable section
-    for(idx=0;idx<relo._ehdr.e_shnum - 3;++idx){
+//     //read the section header table
+//     input.seekg(relo._ehdr.e_shoff);
+    
+
+//     //read the customizatable section
+//     for(idx=0;idx<relo._ehdr.e_shnum - 3;++idx){
         
-        //construct a section
-        CustomizableSection sec = CustomizableSection(relo);
-        sec.setNdx(idx);
+//         //construct a section
+//         CustomizableSection sec = CustomizableSection(relo);
+//         sec.setNdx(idx);
 
-        //read the section content
-        input >> sec;
-        relo.cus_section_list.push_back(sec);
+//         //read the section content
+//         input >> sec;
+//         relo.cus_section_list.push_back(sec);
 
-        //fill the symbol set of each section
-        relo._fill_symbol(sec);
+//         //fill the symbol set of each section
+//         relo._fill_symbol(sec);
+//     }
+
+//     //construct the symbol table
+//     input >> relo.symtbl;
+
+//     //construct the string table
+//     input >> relo.string_table;
+
+//     //all done
+//     return input;
+// }
+
+inline std::ifstream &operator>>(std::ifstream& in,Relocatable &relo){
+    std::unordered_map<std::string,Section> sec_list;
+
+    uint32_t sec_hdr_tbl_base = relo.base.getSecHdrBase();
+    uint32_t sec_hdr_tbl_num = relo.base.get_sec_num();
+    Elf32_Shdr sec_hdr_tbl[sec_hdr_tbl_num];
+
+    //get section string table
+    in >> relo.shstrtbl;
+    //sec_list["shstrtab"] = shstrtbl;
+
+    in.read((char*)sec_hdr_tbl, sec_hdr_tbl_num*sizeof(Elf32_Shdr));
+
+    for(int i=0;i<sec_hdr_tbl_base;++i){
+        Elf32_Shdr hdr = sec_hdr_tbl[i];
+        
+        strtbl stringtbl(base,STRTBL);
+        strtbl shstrtbl(base,SHSTRTBL);
+        Symtab symtab(_elfbase);
+
+        //get string table
+        if(hdr.sh_type == SHT_STRTAB && i!= _elfbase.getShStrTblNdx()){
+            stringtbl.setNdx(i);
+            in >> stringtbl;
+            sec_list["strtab"] = stringtbl;
+        }
+
+        //get symbol table
+        if(hdr.sh_type == SHT_SYMTAB){
+            symtab.setNdx(i)
+            in >> symtab;
+            sec_list["symtab"] = symtab;
+        }
+
+        if(hdr.sh_type == SHT_RELA){
+            ReloSection relo(_elfbase);
+            //get the name
+            std::string name = shstrtbl.getName(hdr.sh_name);
+            relo.setNdx(i);
+            in >> relo;
+        }
+
+        //get other section
+        if(hdr.sh_type == SHT_PROGBITS){
+            CustomizableSection cus_sec(_elfbase);
+            //get the name
+            std::string name = shstrtbl.getName(hdr.sh_name);
+            cus_sec.setNdx(i);
+            in >> cus_sec;
+
+            //rewrite all the symbol
+            std::vector<Symbol> sym_list = symtab.get_sec_Symbol(i);
+
+            for(Symbol& sym : sym_list){
+                std::vector<Rel<R_ARM_ABS32>> rel_list = relo.get_sec_Symbol(sym);
+                
+                for(Rel<R_ARM_ABS32> rel:rel_list){
+                    sym.bind(rel);
+                }
+            }
+            
+        }
+
     }
-
-    //construct the symbol table
-    input >> relo.symtbl;
-
-    //construct the string table
-    input >> relo.string_table;
-
-    //all done
-    return input;
 }
+    //the section header table
+    class SectionHdrTbl :public Sequence{
+    
+    private:
+        elf& _elfbase;
+        
 
+    public:
+        SectionHdrTbl(elf& elfbase):_elfbase(elfbase){ }
+
+        void construct(std::ifstream& in){
+
+            
+
+        }
+    };
 

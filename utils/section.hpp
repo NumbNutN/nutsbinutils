@@ -36,7 +36,7 @@ public:
     }
 
 protected:
-    const elf& _elfbase;
+    elf _elfbase;
     Section(const elf& elfbase,const std::string& name,Elf32_Word type,Elf32_Word addr,Elf32_Word flags = 0) :
             _name(name),
             _sechdr({
@@ -47,11 +47,19 @@ protected:
                 }),
             _elfbase(elfbase){}
 
+    Section(const std::string& name,Elf32_Word type,Elf32_Word addr,Elf32_Word flags = 0)
+        : _name(name),
+        _sechdr({
+                .sh_type = type,
+                .sh_flags = flags,
+                .sh_addr = addr,
+                .sh_size = 0
+                }){}
     /*
      * create a section object using section header,basically use when reading from file
      * name is required when construct from a relocatable file
     */
-    Section(const elf& elfbase,const std::string& name,const Elf32_Shdr& sechdr): _name(name),_sechdr(sechdr),_elfbase(elfbase){}
+    Section(const std::string& name,const Elf32_Shdr& sechdr): _name(name),_sechdr(sechdr),_elfbase(elfbase){}
 
 public:
 

@@ -11,15 +11,11 @@
 #include "section.hpp"
 #include "symbol.hpp"
 
-class CustomizableSection : public Section{
+#include "utils.h"
 
-private:
+class CustomizableSection : public Section{
     
 protected:
-    uint32_t curLiteralPoolPos = 0;
-    //local view symbol set
-    //record <symbol,abosulte position>
-    std::vector<Symbol> symbol_set;
 
     //record <position,symbol used instruction>
     struct reloIns_type{
@@ -30,11 +26,8 @@ protected:
     std::vector<reloIns_type> reloInsSet;
 
 public:
-    //global symbol definition
-    //they should be reset offset if section is rebased
-    //record <symbol,abosulte position>
-    std::vector<Symbol> gloSymbolSet;
-
+    //local view symbol set
+    std::vector<Symbol> symbol_set;
 
 public:
 // container interface
@@ -44,7 +37,7 @@ public:
         Section::set_base(new_base);   
 
         //rebase for global symbol included in the section
-        for(Symbol& sym: gloSymbolSet){
+        for(Symbol& sym: symbol_set){
             sym.set_base(pos());
         }
     }
@@ -54,7 +47,7 @@ public:
         Section::set_offset(new_offset);
 
         //rebase for global symbol included in the section
-        for(Symbol& sym: gloSymbolSet){
+        for(Symbol& sym: symbol_set){
             sym.set_base(pos());
         }
     }
@@ -72,13 +65,6 @@ public:
  * insert method group
  * call when analyse the assemble file
 */
-    void insert(const Instruction<COMPLETE_INS>& ins){
-
-        //write the encode to buffer
-        uint32_t code = ins.encode();
-        *this << code;
-        size() += sizeof(uint32_t);
-    }
 
     void insert(Instruction<INCOMPLETE_INS>& ins,const std::string sym){
 
@@ -86,35 +72,18 @@ public:
         ins.set_offset(size());
         reloInsSet.push_back({ins,sym});
         //write the encode to buffer
-        uint32_t code = ins.encode();
-        *this << code;
-        size() += sizeof(uint32_t);
+        (Container<3>&)*this << (Sequence&)ins;
     }
 
     template <directive_type type>
     void insert(Directive<type>& obj){
         *this << obj;
-        size() += obj.size();
     }
-
-    // //insert a symbol
-    // //a symbol use on space
-    // void insert(const std::string& str,enum SymbolBindingType type = LOCAL){
-    //     symbol_set.push_back(Symbol(str,size()));
-    // }
 
     //insert a symbol
     void insert(const Symbol& sym){
         symbol_set.push_back(sym);
     }
-
-    // //insert a global symbol
-    // //symbol will be automatically set new base
-    // void insertGlobal(const std::string& str,uint32_t pos){
-    //     Symbol sym(str,pos);
-    //     gloSymbolSet.push_back(sym);
-    //     Container::insert(gloSymbolSet.back());
-    // }
 
     //insert a absolute address to literal pool
     //it is a symbol  with R_ARM_ABS32
@@ -123,7 +92,7 @@ public:
     //it is certainly fixed when all the insert done
     void insertLiteral(const Instruction<INCOMPLETE_INS>& ins,Symbol& sym){
         
-        Symbol literal("$"+sym._name,LOCAL);
+        Symbol literal("$"+sym._name,STB_LOCAL);
         // literal binding the instruction
         literal.bind(ins);
 
@@ -191,9 +160,9 @@ public:
 /**
  * 
 */
-inline std::ofstream& operator>>(std::ifstream& in,CustomizableSection& sec){
+// inline std::ofstream& operator>>(std::ifstream& in,CustomizableSection& sec){
     
-    //read section header   and   read the buffer content
-    in >> (Section&)sec;
+//     //read section header   and   read the buffer content
+//     in >> (Section&)sec;
 
-}
+// }

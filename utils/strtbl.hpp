@@ -45,24 +45,24 @@ public:
         return str;
     }
 
-    // friend std::ofstream& operator<<(std::ofstream& out,strtbl& strtbl);
-    // friend std::ifstream& operator>>(std::ifstream& in,strtbl& strtbl);
+    friend std::ofstream& operator<<(std::ofstream& out,strtbl& strtbl);
+    friend std::ifstream& operator>>(std::ifstream& in,strtbl& strtbl);
 };
 
-// inline std::ofstream& operator<<(std::ofstream& out,strtbl& strtbl){
-//     if(strtbl._type == STRTBL)
-//         strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx() - 1);
-//     else if(strtbl._type == SHSTRTBL)
-//         strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx());
-//     out << (Section&)strtbl;
-//     return out;
-// }
+inline std::ofstream& operator<<(std::ofstream& out,strtbl& strtbl){
+    if(strtbl._type == STRTBL)
+        strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx() - 1);
+    else if(strtbl._type == SHSTRTBL)
+        strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx());
+    out << (Section&)strtbl;
+    return out;
+}
 
-// inline std::ifstream& operator>>(std::ifstream& in,strtbl& strtbl){
-//     if(strtbl._type == STRTBL)
-//         strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx() - 1);
-//     else if(strtbl._type == SHSTRTBL)
-//         strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx());
-//     in >> (Section&)strtbl;
-//     return in;
-// }
+inline std::ifstream& operator>>(std::ifstream& in,strtbl& strtbl){
+    if(strtbl._type == STRTBL)
+        strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx() - 1);
+    else if(strtbl._type == SHSTRTBL)
+        strtbl.setNdx(strtbl.getElfbase().getShStrTblNdx());
+    in >> (Section&)strtbl;
+    return in;
+}

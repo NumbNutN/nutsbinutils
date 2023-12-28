@@ -66,7 +66,7 @@ int main(int argc,char** argv)
     yyparse();
 
     //rearange the section 
-    reloobj.arange();
+    reloobj.set_global_symbol();
     
     //write elf file
     output << reloobj;

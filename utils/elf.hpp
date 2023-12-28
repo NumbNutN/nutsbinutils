@@ -44,9 +44,14 @@ protected:
     friend std::ifstream &operator>>(std::ifstream& input,elf& elfobj);
 
 public:
-
+    elf(){}
+    
     uint32_t getSecHdrBase() const {
         return _ehdr.e_shoff;
+    }
+
+    uint32_t get_sec_num() const {
+        return _ehdr.e_shnum;
     }
 
     uint32_t getProHdrBase() const {

@@ -1,3 +1,4 @@
+#pragma once
 #include <elf.h>
 
 #include <vector>
@@ -21,22 +22,23 @@ public:
 
         //select a new offset
         uint32_t off = allocoffset(seg.size(),_palign);
-        seg.setOffset(off);
+        seg.set_offset(off);
 
         //push to program table
         segmentUnitList.push_back(seg);
 
+        //add segment to container management
+        Container::insert(segmentUnitList.back());
+
         //add segment number
         _ehdr.e_phnum += 1;
+
+        //arange for program header table
+        _ehdr.e_phoff = getcuroffset();
     }
 
     void setEntry(Elf32_Word entry){
         _ehdr.e_entry = entry;
-    }
-
-    void arange(){
-        //arange for program header table
-        _ehdr.e_phoff += getcuroffset();
     }
 
     friend std::ostream &operator<<(std::ostream& output,Executable& exec);

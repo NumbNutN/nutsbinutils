@@ -151,7 +151,7 @@ TEXT
 CUSTOM_SECTION
     : CUSTOM_SECTION INSTRUCTION               {
         //counter new instruction, insert
-        $1->insert(*$2);
+        $1 << *$2;
         $$ = $1;
         // cout << bitset<32>($2->encode()) << endl;
     }

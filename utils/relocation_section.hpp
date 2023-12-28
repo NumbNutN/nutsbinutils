@@ -25,5 +25,21 @@ public:
         }
     }
 
+    std::vector<Rel<R_ARM_ABS32>> getRel(uint32_t symtab_idx){\
+        std::vector<Rel<R_ARM_ABS32>>rel_list;
+        std::istream in(&buffer());
+        Elf32_Rel rel_tbl[size()/sizeof(Elf32_Rel)];
+        in.read((char*)rel_tbl,size()/sizeof(Elf32_Rel));
+        for(int i=0;i<size()/sizeof(Elf32_Rel);++i){
+            if((rel_tbl[i].r_info)>>8 == symtab_idx){
+                Rel<R_ARM_ABS32> rel_item;
+                rel_item.set_offset(rel_tbl[i].r_offset - section.offset());
+                rel_item.set_base(section.base());
+
+                rel_list.push_back(rel_item);
+            }
+        }
+    }
+
  
 };
