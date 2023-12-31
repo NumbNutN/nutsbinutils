@@ -143,7 +143,7 @@ TEXT
 CUSTOM_SECTION
     : CUSTOM_SECTION INSTRUCTION               {
         //counter new instruction, insert
-        (Section&)*$1 << (Sequence&)*$2;
+        (Container<0>&)*$1 << (Sequence&)*$2;
         $$ = $1;
         // cout << bitset<32>($2->encode()) << endl;
     }

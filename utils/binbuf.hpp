@@ -19,7 +19,7 @@ class binbuf : public std::streambuf{
 private:
     size_t _size = 2;
     size_t _maxSize = 4096;
-    char_type* buf;
+    char_type* _buf;
     size_t underflowCnt = 0;
     size_t overflowCnt = 0;
     char_type* _end;
@@ -32,18 +32,13 @@ private:
 protected:
     virtual int_type overflow(int_type c) override{
         //std::cout << "overflow count " << ++overflowCnt << std::endl;
-        if(_size >= _maxSize)return traits_type::eof();
 
         //reallocate a larger array
         _size <<= 1;
-        char_type* lastbuf = buf;
-        buf = (char_type*)realloc(buf,_size);
 
-        //adjust the put area pointer
-        setp(buf + (pptr() - lastbuf), buf+_size);
-
-        //get area pointer also
-        setg(buf,buf + (gptr()-eback()),buf + (egptr() - eback()));
+        if(_size > _maxSize)return traits_type::eof();
+        
+        setbuf(_buf,_size);
         
         //insert the new character
         *pptr() = c;
@@ -63,18 +58,30 @@ protected:
 
         //the end() marks the EOF
         if(gptr() == end())return traits_type::eof();
-        setg(buf, gptr(), end());
+        setg(_buf, gptr(), end());
         //return the next available character
         return *gptr();
     }
 
     virtual std::streambuf* setbuf(char* s,std::streamsize n) override{
-        //set the get area pointer
-        setg(buf, buf, buf);
-        //set the put area pointer
-        setp(buf, buf + n);
+        if(n < _size)throw std::exception();
+        if(n > _maxSize)throw std::exception();
+
+        char_type* lastbuf = s;
+        s = (char_type*)realloc(s,n);
+
+        //adjust the put area pointer
+        setp(s + (pptr() - lastbuf), s+n);
+
+        //get area pointer also
+        setg(s,s + (gptr()-eback()),s + (egptr() - eback()));
+
         //set the _end mark
-        _end = buf;
+        _end = pptr();
+
+        _buf = s;
+
+        _size = n;
 
         return this;
     }
@@ -94,29 +101,34 @@ protected:
         _end = end();
 
         if(way == std::ios_base::beg){
-            ptr = buf;
+            ptr = _buf;
             pos = off;
         }
         if(way == std::ios_base::end){
             ptr = end();
-            pos = (end() - buf) + off;
+            pos = (end() - _buf) + off;
         }
         if((way == std::ios_base::cur) && (mode & std::ios_base::in) == std::ios_base::in){
             ptr = gptr();
-            pos = (gptr() - buf) + off;
+            pos = (gptr() - _buf) + off;
         }
         if((way == std::ios_base::cur) && (mode & std::ios_base::out) == std::ios_base::out){
             ptr = pptr();
-            pos = (pptr() - buf) + off;
+            pos = (pptr() - _buf) + off;
         }
 
         if((mode & std::ios_base::in) == std::ios_base::in){
-            if(buf + pos > end())return (pos_type)-1;
+            if(_buf + pos > end())return (pos_type)-1;
             setg(eback(),ptr+off,egptr());
         }
         if((mode & std::ios_base::out) == std::ios_base::out){
-            if(buf + pos > epptr())return (pos_type)-1;
-            setp(ptr+off,epptr());
+            //if the seek position is larger than current epptr()
+            //reset the buffer size with the minimum requirement
+            if(_buf + pos > epptr()){
+                setbuf(_buf,pos);
+                seekoff(off,way,mode);
+            }
+            else setp(ptr+off,epptr());
         }
         return pos;
     }
@@ -131,8 +143,13 @@ protected:
 public:
     binbuf() {
         //allocate the base buffer
-        buf = (char_type*)malloc(_size);
-        setbuf(buf,_size);
+        _buf = (char_type*)malloc(_size);
+        //set the get area pointer
+        setg(_buf, _buf, _buf);
+        //set the put area pointer
+        setp(_buf, _buf + _size);
+        //set the _end mark
+        _end = _buf;
     }
 
     binbuf(const binbuf& obj):std::streambuf(obj){
@@ -140,17 +157,17 @@ public:
         std::ostream out((std::streambuf*)&obj);
         out.flush();
         _size = obj._size;
-        buf = (char_type*)malloc(_size);
+        _buf = (char_type*)malloc(_size);
         //set the _end mark
-        _end = obj._end - obj.buf + buf;
-        memcpy(buf,obj.buf,_size);
-        setg(buf, buf + (obj.gptr() - obj.buf), buf + (obj.egptr() - obj.buf));
-        setp(buf + (obj.pptr() - obj.buf),buf +_size);
+        _end = obj._end - obj._buf + _buf;
+        memcpy(_buf,obj._buf,_size);
+        setg(_buf, _buf + (obj.gptr() - obj._buf), _buf + (obj.egptr() - obj._buf));
+        setp(_buf + (obj.pptr() - obj._buf),_buf +_size);
     }
 
     void info(std::ostream& out){
         std::cout << "\033[32mbinary buffer info(in hex)" << std::endl;
-        out << std::hex << "buffer base " << (uint64_t)buf << std::endl;
+        out << std::hex << "buffer base " << (uint64_t)_buf << std::endl;
         out << std::hex << "pbegin " << (uint64_t)pbase() << " pnext " << (uint64_t)pptr() << " pend " << (uint64_t)epptr() << std::endl;
         out << std::hex << "gbegin " << (uint64_t)eback() << " gnext " << (uint64_t)gptr() << " gend " << (uint64_t)egptr() << std::endl;
         std::cout << "\033[0m" << std::endl;
@@ -169,12 +186,16 @@ public:
         }
 
         //start from the gbase
+        out << std::hex << std::setfill('0') << std::setw(2) << 0 << ' ';
         for(p = eback();p!= end();++p){
             //write down the hex content
             char dat = *p;
             out << std::hex << std::setfill('0') << std::setw(2)<< (((uint32_t)dat) & 0xFF);
             if((p - eback() + 1)%showPerLine)out << ' ';
-            else out << std::endl;
+            else{
+                out << std::endl;
+                out << std::hex << std::setfill('0') << std::setw(2) << p + 1 - eback() << ' ';
+            }
         }
 
         if((p - eback())%showPerLine)out << std::endl;
@@ -198,7 +219,7 @@ public:
     }
 
     virtual ~binbuf() {
-        free(buf);
+        free(_buf);
     }
 
     friend std::ostream& operator<<(std::ostream& out,binbuf& buf);

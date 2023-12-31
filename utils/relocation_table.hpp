@@ -12,7 +12,7 @@ public:
 
     Relotab(){}
     /* construct when create a new relocatable or read a relocatable */
-    Relotab(const std::string& name) : Section(".rel"+name,SHT_SYMTAB,0x0){}
+    Relotab(const std::string& name) : Section(".rel"+name,SHT_RELA,0x0){}
 
     void insert(Symbol& sym,uint32_t symtab_idx){
         //scenario1:if a relocation entry is R_ARM_ABS32 set a relo

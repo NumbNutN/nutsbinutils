@@ -38,6 +38,7 @@ protected:
         memcpy(_ehdr.e_ident,magic,sizeof(magic));
             //the align requirement of architecture
         _poff = MOD(sizeof(Elf32_Ehdr),5)?ROUND(sizeof(Elf32_Ehdr),5)+(1<<5):sizeof(Elf32_Ehdr);
+        _size = _poff;
     }
 
     friend std::ofstream &operator<<(std::ofstream& output,elf &elf_struct);

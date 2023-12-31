@@ -102,6 +102,17 @@ public:
 
         //arange for section header table
         _ehdr.e_shoff = get_cur_offset();
+
+        //now do insert the section headers table
+        *this << section_hdr_tbl;
+        std::cout << section_hdr_tbl.buffer();
+
+        //write the elf header
+        std::ostream output(&buffer());
+        output.seekp(0x0, std::ios::beg);
+        output.write(reinterpret_cast<const char*>(&_ehdr), sizeof(Elf32_Ehdr));
+        std::cout << (*this).buffer();
+
     }
 
     friend Relocatable& operator<<(Relocatable&,Section&);
@@ -118,12 +129,12 @@ inline Relocatable& operator<<(Relocatable& relo,CustomizableSection& sec){
     
     //add into buffer
     relo << (Section&)sec;
-
+    std::cout << relo.buffer();
     //add the customizable section into list
     relo.cus_section_list.push_back(sec);
 
     //create a relocation table if necessary
-    Relotab relotbl(sec.getName());
+    Relotab relotbl(sec._name);
 
     //get the symbol in a customization section
     for(std::shared_ptr<Symbol>& sym:sec.symbol_set){
@@ -151,29 +162,35 @@ inline Relocatable& operator<<(Relocatable& relo,Section& seq){
 
         //first insert the section name to shstrtbl
         //remember shstrtbl will also call this api
-        uint32_t idx = relo.shstrtbl.insert(seq.getName());
-        seq.setNameIdx(idx);
+        uint32_t idx = relo.shstrtbl.insert(seq._name);
 
         //allocate to a certain place
         relo << (Sequence&)seq;
 
+        //construct a section header
+        Elf32_Shdr shdr = {
+            .sh_name = idx,
+            .sh_type = seq._type,
+            .sh_flags = seq._flags,
+            .sh_offset = seq.pos(),
+            .sh_size = seq.size()
+        };
+
         //write the header
-        relo.section_hdr_tbl << seq.getHeader();
+        relo.section_hdr_tbl << shdr;
         relo._ehdr.e_shnum++;
 
-        
+        return relo;
+
 }
 
 inline std::ofstream &operator<<(std::ofstream& output,Relocatable &relo){
 
     //first output elf header
-    output << (elf&)relo;
+    // output << (elf&)relo;
 
     //output the relo
     (std::ostream&)output << relo;
-
-    //output the section header table
-    output << relo.section_hdr_tbl;
 
     return output;
 }
