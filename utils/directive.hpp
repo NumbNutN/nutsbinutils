@@ -38,9 +38,9 @@ inline Directive<WORD>::Directive(uint32_t dat){
 
 template <>
 inline Directive<ZERO>::Directive(uint32_t num){
-    _size = num*sizeof(char);
-    char tmp[_size];
-    memset(tmp,0,_size);
+    size_t size = num*sizeof(char);
+    char tmp[size];
+    memset(tmp,0,size);
     *this << tmp;
 }
 
@@ -50,8 +50,8 @@ template <>
 inline Directive<ALIGN>::Directive(uint32_t align,uint32_t pos){
     //check the current pos
     uint32_t nextPos = MOD(pos,align)?(ROUND(pos,align)+(1<<align)):pos;
-    _size = nextPos - pos;
-    char tmp[_size];
-    memset(tmp,0,_size);
+    size_t size = nextPos - pos;
+    char tmp[size];
+    memset(tmp,0,size);
     *this << tmp;
 }

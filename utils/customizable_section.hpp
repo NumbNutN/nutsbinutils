@@ -81,11 +81,22 @@ public:
         reloInsSet.push_back({ins,sym});
         //write the encode to buffer
         (Container<0>&)*this << (Sequence&)ins;
+        std::cout << buffer();
+    }
+
+    void insert(Instruction<COMPLETE_INS>& ins){
+
+        //add to the incomplete set
+        ins.set_offset(size());
+        //write the encode to buffer
+        (Container<0>&)*this << (Sequence&)ins;
+        std::cout << buffer();
     }
 
     template <directive_type type>
     void insert(Directive<type>& obj){
-        *this << obj;
+        (Container<0>&)*this << (Sequence&)obj;
+        std::cout << buffer();
     }
 
     //insert a symbol
