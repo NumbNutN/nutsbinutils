@@ -115,7 +115,7 @@ R11 [rR]11
 {SYMBOL}        {
     strcpy(yylval.string_literal,yytext);
     //printf("symbol recognize:%d\n",yylineno);
-    return SYMBOL;
+    return SYMBOL_NAME;
 }
 
 {}

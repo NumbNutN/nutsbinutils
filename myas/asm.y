@@ -11,6 +11,7 @@
 #include "customizable_section.hpp"
 #include "relocatable.hpp"
 #include "symbol.hpp"
+#include "sequence.hpp"
 
 #include <iostream>
 #include <bitset>
@@ -108,6 +109,7 @@ extern char* curSymbol;
 %type <directive_string> DIRECTIVE_STRING
 %type <directive_align> DIRECTIVE_ALIGN
 %type <symbol> SYMBOL           /* 符号 */
+%type <symbol> GLOBAL_SYMBOL
 
 %type <mnemonic> MNEMONIC           /* 指令助记符 */
 
@@ -134,24 +136,14 @@ TEXT
         $2->incompleteIdentified();
         //instruction set over
         //add the section
-        reloobj.insert(*$2);
-        std::cout << $2->buffer();
-        std::cout << reloobj.sectionUnitList[0].buffer();
+        reloobj << *$2;
     }
-
-    // add a global symbol statement to relocatable
-    | TEXT DIRECTIVE_GLOBAL_NAME SYMBOL_NAME                     {
-        //create a global symbol
-        Symbol sym($3,GLOBAL);
-        reloobj.insert(sym);
-    }
-
     |                                               {}
 
 CUSTOM_SECTION
     : CUSTOM_SECTION INSTRUCTION               {
         //counter new instruction, insert
-        $1 << *$2;
+        (Section&)*$1 << (Sequence&)*$2;
         $$ = $1;
         // cout << bitset<32>($2->encode()) << endl;
     }
@@ -168,12 +160,13 @@ CUSTOM_SECTION
     | CUSTOM_SECTION DIRECTIVE_STRING                {$1->insert(*$2);$$ = $1;}
     | CUSTOM_SECTION DIRECTIVE_ALIGN                 {$1->insert(*$2);$$ = $1;}
 
-    | CUSTOM_SECTION SYMBOL                          {$1->insert(*$2);$$ = $1;}
+    | CUSTOM_SECTION SYMBOL                          {$1->insert($2);$$ = $1;}
+    | CUSTOM_SECTION GLOBAL_SYMBOL                   {$1->insert($2);$$ = $1;}
 
     // a section without explict statement ".section" is not allow
     | DIRECTIVE_SECTION_NAME                          {
         //create a instruction set object
-        $$ = new CustomizableSection(reloobj);
+        $$ = new CustomizableSection;
         curInstructionSet = $$;
     }
 
@@ -273,6 +266,9 @@ DIRECTIVE_ALIGN
     }
 
 SYMBOL
-    : SYMBOL_NAME ':'    {$$ = new Symbol($1,LOCAL);}
+    : SYMBOL_NAME ':'    {$$ = new Symbol($1,STB_LOCAL);}
+
+GLOBAL_SYMBOL 
+    : DIRECTIVE_GLOBAL_NAME SYMBOL_NAME ':'     {$$ = new Symbol($2,STB_GLOBAL);}
 
 %%

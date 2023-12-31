@@ -29,6 +29,10 @@ public:
         return _size;
     }
 
+    int32_t get_offset(){
+        return _offset;
+    }
+
     binbuf& buffer(){
         //buffer must be flush before return
         //else it will get problem when copy
@@ -37,12 +41,22 @@ public:
         return _buf;
     }
 
+    void read(std::istream& in,size_t size){
+        char tmp[size];
+        in.read(tmp, size);
+        if(in.gcount() != size)throw std::exception();
+        std::ostream out(&_buf);
+        out.write(tmp, size);
+    }
+
     template <typename T>
     friend Sequence& operator<<(Sequence&,const T);
 
     friend Sequence& operator<<(Sequence&,const std::string&);
 
     friend std::ostream& operator<<(std::ostream&,Sequence&);
+
+    // friend std::istream& operator>>(std::istream& in,Sequence& seq);
 };
 
 
@@ -73,3 +87,11 @@ inline std::ostream& operator<<(std::ostream& out,Sequence& seq)
     out.flush();
     return out;
 }
+
+// /* read from a input stream, but you need to set the size of a sequence first */
+// inline std::istream& operator>>(std::istream& in,Sequence& seq){
+//     char tmp[seq.size()];
+//     in.read(tmp, seq.size());
+//     seq << tmp;
+//     return in;
+// }

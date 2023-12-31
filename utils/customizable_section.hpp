@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <memory>
 
 
 #include "binbuf.hpp"
@@ -27,7 +28,14 @@ protected:
 
 public:
     //local view symbol set
-    std::vector<Symbol> symbol_set;
+    std::vector<std::shared_ptr<Symbol>> symbol_set;
+
+    //literal symbol set
+    std::vector<std::shared_ptr<Symbol>> literal_symbol_set;
+
+    //relo entry list
+    std::vector<std::shared_ptr<Rel<R_ARM_ABS32>>>relo_abs_list;
+    std::vector<Rel<R_ARM_REL32>>relo_rel_list;
 
 public:
 // container interface
@@ -37,8 +45,8 @@ public:
         Section::set_base(new_base);   
 
         //rebase for global symbol included in the section
-        for(Symbol& sym: symbol_set){
-            sym.set_base(pos());
+        for(std::shared_ptr<Symbol>& sym: symbol_set){
+            sym->set_base(pos());
         }
     }
 
@@ -47,16 +55,16 @@ public:
         Section::set_offset(new_offset);
 
         //rebase for global symbol included in the section
-        for(Symbol& sym: symbol_set){
-            sym.set_base(pos());
+        for(std::shared_ptr<Symbol>& sym: symbol_set){
+            sym->set_base(pos());
         }
     }
 
 public:
 
-    CustomizableSection(elf& elfbase) : 
-        Section((elf&)elfbase,
-                ".text",
+    CustomizableSection(const std::string& name = ".text") : 
+        Section(
+                name,
                 SHT_PROGBITS,
                 0x0,
                 SHF_ALLOC | SHF_EXECINSTR){}
@@ -72,7 +80,7 @@ public:
         ins.set_offset(size());
         reloInsSet.push_back({ins,sym});
         //write the encode to buffer
-        (Container<3>&)*this << (Sequence&)ins;
+        (Container<0>&)*this << (Sequence&)ins;
     }
 
     template <directive_type type>
@@ -81,8 +89,8 @@ public:
     }
 
     //insert a symbol
-    void insert(const Symbol& sym){
-        symbol_set.push_back(sym);
+    void insert(Symbol* sym){
+        symbol_set.push_back(std::shared_ptr<Symbol>(sym));
     }
 
     //insert a absolute address to literal pool
@@ -92,23 +100,31 @@ public:
     //it is certainly fixed when all the insert done
     void insertLiteral(const Instruction<INCOMPLETE_INS>& ins,Symbol& sym){
         
-        Symbol literal("$"+sym._name,STB_LOCAL);
+        std::shared_ptr<Symbol> literal = std::shared_ptr<Symbol>(new Symbol("$"+sym._name,STB_LOCAL));
+        
+        //ins insert to relo table
+        relo_rel_list.push_back(ins);
+
         // literal binding the instruction
-        literal.bind(ins);
+        literal->bind(relo_rel_list.back());
+        literal->set_offset(size());
 
+        // literal insert to symbol table
+        literal_symbol_set.push_back(literal);
+
+        // literal insert to relo table
+        relo_abs_list.push_back(std::dynamic_pointer_cast<Rel<R_ARM_ABS32>>(literal));
+        
         // symbol binding the literal
-        sym.bind(literal);
-
-        literal.set_offset(size());
-        insert(sym);
+        sym.bind(relo_abs_list.back());
 
     }
 
 public:
-//get symbol by relocatable
+    //get symbol by relocatable
     bool symbolExist(const std::string& str){
-        for(Symbol& sym:symbol_set){
-            if(sym._name == str){
+        for(std::shared_ptr<Symbol>& sym:symbol_set){
+            if(sym->_name == str){
                 return true;
             }
         }
@@ -117,9 +133,9 @@ public:
 
     //get symbol
     Symbol& getSymbol(const std::string& str){
-        for(Symbol& sym:symbol_set){
-            if(sym._name == str){
-                return sym;
+        for(std::shared_ptr<Symbol>& sym:symbol_set){
+            if(sym->_name == str){
+                return *sym;
             }
         }
     }
@@ -139,30 +155,25 @@ public:
             Instruction<INCOMPLETE_INS> incomplete_ins = unit.ins;
 
             //see if the symbol is existed in the same section
-            for(Symbol& symbol: symbol_set){
-                if(symbol._name == name){
+            for(std::shared_ptr<Symbol>& symbol: symbol_set){
+                if(symbol->_name == name){
 
                     //create a symbol in literal pool
-                    insertLiteral(incomplete_ins,symbol);
+                    insertLiteral(incomplete_ins,*symbol);
 
                     it = reloInsSet.erase(it);
+                    // finish the relo instruction
+                    break;
                 }else{
                     it++;
                 }
             }
         }
+
+        //merge literal pool and basic symbol table
+        symbol_set.insert(symbol_set.end(), literal_symbol_set.begin(), literal_symbol_set.end());
+
     }
 
-    friend std::ofstream& operator>>(std::ifstream& in,CustomizableSection& sec);
     
 };
-
-/**
- * 
-*/
-// inline std::ofstream& operator>>(std::ifstream& in,CustomizableSection& sec){
-    
-//     //read section header   and   read the buffer content
-//     in >> (Section&)sec;
-
-// }

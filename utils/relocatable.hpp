@@ -8,7 +8,7 @@
 #include "symbol_table.hpp"
 #include "customizable_section.hpp"
 #include "symbol.hpp"
-#include "relocation_section.hpp"
+#include "relocation_table.hpp"
 #include "utils.h"
 
 #include <memory.h>
@@ -17,28 +17,31 @@
 #include <string>
 #include <fstream>
 
+extern void get_section_symbol(const Section& sec,uint32_t ndx,Symtab symtab,Strtbl strtbl,Relotab relotab);
 
 class Relocatable : public elf{
 
 private:
 
-    elf& base = (elf&)*this;
 
     uint32_t cur_sec_idx = 0;
    
     //wait for setting to global symbol
     std::vector<std::string> global_sym_list;
 
-    SectionHdrTbl section_hdr_tbl;
+    // SectionHdrTbl section_hdr_tbl;
 
 public:
 
     //symbol table
     Symtab symtbl;    
     //string table
-    strtbl string_table;
+    Strtbl strtbl;
     //section string table
-    strtbl shstrtbl;
+    Strtbl shstrtbl;
+
+    //section header table
+    Sequence section_hdr_tbl;
 
     //customizatable section header table
     //customizatable section has the idx same as its idx in vector
@@ -46,29 +49,13 @@ public:
 
     //relocation section table
     //relocation section has the idx same as its major customization section idx plus shstrtblndx
-    std::vector<ReloSection> relo_section_list;
+    std::vector<Relotab> relo_section_list;
 
     Relocatable() : elf(ET_REL),
-    symtbl(base),
-    string_table(base,STRTBL),
-    shstrtbl(base,SHSTRTBL){}
+    strtbl(STRTBL),
+    shstrtbl(SHSTRTBL){}
 
 private:
-
-    //fill the symbol set of section
-    //call when read from relo file
-    void _fill_symbol(CustomizableSection& sec){
-        //search the symbol table
-        for(int i=0;i<symtbl.size()/sizeof(Elf32_Sym);++i){
-            Elf32_Sym symHdr = symtbl.getSymbol(i);
-            if(symHdr.st_value >= sec.getOffset() && symHdr.st_value < (sec.getOffset()+sec.size())){
-                std::string name = string_table.getName(symHdr.st_name);
-                Symbol sym(name);
-                sym.set_offset(symHdr.st_value);
-                sec.gloSymbolSet.push_back(sym);
-            }
-        }
-    }
 
     void set_global_symbol(){
         
@@ -87,25 +74,6 @@ private:
         }
     }
 
-    void organize(){
-
-        //insert the symbol table to relocatable
-        *this << (Section<0>&)symtbl;
-
-        //insert the string table to relocatable
-        *this << string_table;
-
-        //the section string table idx
-        //section string table should be the last section
-        _ehdr.e_shstrndx = _ehdr.e_shnum;
-
-        //insert the section string table to relocatable
-        *this << shstrtbl;
-
-        //arange for section header table
-        _ehdr.e_shoff = get_cur_offset();
-    }
-
 public:
 
     //insert a global symbol into relocatable
@@ -115,6 +83,25 @@ public:
         //actually add into symbol table when arange
         global_sym_list.push_back(sym);
         
+    }
+
+    void organize(){
+
+        //insert the symbol table to relocatable
+        *this << (Section&)symtbl;
+
+        //insert the string table to relocatable
+        *this << (Section&)strtbl;
+
+        //the section string table idx
+        //section string table should be the last section
+        _ehdr.e_shstrndx = _ehdr.e_shnum;
+
+        //insert the section string table to relocatable
+        *this << (Section&)shstrtbl;
+
+        //arange for section header table
+        _ehdr.e_shoff = get_cur_offset();
     }
 
     friend Relocatable& operator<<(Relocatable&,Section&);
@@ -136,20 +123,20 @@ inline Relocatable& operator<<(Relocatable& relo,CustomizableSection& sec){
     relo.cus_section_list.push_back(sec);
 
     //create a relocation table if necessary
-    ReloSection relotbl(relo,sec.getName());
+    Relotab relotbl(sec.getName());
 
     //get the symbol in a customization section
-    for(Symbol& sym:sec.symbol_set){
+    for(std::shared_ptr<Symbol>& sym:sec.symbol_set){
         
         //add the symbol name into string table
         //get the string idx in table
-        size_t string_idx = relo.string_table.insert(sym);
+        size_t string_idx = relo.strtbl.insert(*sym);
         //add into symbol table
         //get the idx in symbol table
-        uint32_t symbol_idx = relo.symtbl.insert(sym,string_idx,relo.cur_sec_idx);
+        uint32_t symbol_idx = relo.symtbl.insert(*sym,string_idx,relo.cur_sec_idx);
 
-        //insert into the relocation table
-        relotbl.insert(sym, symbol_idx);
+        //get all the relocatable entry connected to the symbol and insert into the relocation table
+        relotbl.insert(*sym, symbol_idx);
     }
 
     //if relotbl has content, add into section table
@@ -167,17 +154,20 @@ inline Relocatable& operator<<(Relocatable& relo,Section& seq){
         uint32_t idx = relo.shstrtbl.insert(seq.getName());
         seq.setNameIdx(idx);
 
+        //allocate to a certain place
+        relo << (Sequence&)seq;
+
         //write the header
         relo.section_hdr_tbl << seq.getHeader();
         relo._ehdr.e_shnum++;
 
-        relo << (Sequence&)seq;
+        
 }
 
 inline std::ofstream &operator<<(std::ofstream& output,Relocatable &relo){
 
     //first output elf header
-    output << relo.base;
+    output << (elf&)relo;
 
     //output the relo
     (std::ostream&)output << relo;
@@ -188,126 +178,107 @@ inline std::ofstream &operator<<(std::ofstream& output,Relocatable &relo){
     return output;
 }
 
-/**
- * read a relocable file
-*/
-// inline std::ifstream &operator>>(std::ifstream& input,Relocatable &relo){
-
-//     int idx = 0;
-//     //read elf header
-//     input >> relo.base;
-
-//     //read the section string table first
-//     input >> relo.shstrtbl;
-
-//     //read the section header table
-//     input.seekg(relo._ehdr.e_shoff);
-    
-
-//     //read the customizatable section
-//     for(idx=0;idx<relo._ehdr.e_shnum - 3;++idx){
-        
-//         //construct a section
-//         CustomizableSection sec = CustomizableSection(relo);
-//         sec.setNdx(idx);
-
-//         //read the section content
-//         input >> sec;
-//         relo.cus_section_list.push_back(sec);
-
-//         //fill the symbol set of each section
-//         relo._fill_symbol(sec);
-//     }
-
-//     //construct the symbol table
-//     input >> relo.symtbl;
-
-//     //construct the string table
-//     input >> relo.string_table;
-
-//     //all done
-//     return input;
-// }
 
 inline std::ifstream &operator>>(std::ifstream& in,Relocatable &relo){
-    std::unordered_map<std::string,Section> sec_list;
+    std::unordered_map<std::string,Relotab> relotab_list;
 
-    uint32_t sec_hdr_tbl_base = relo.base.getSecHdrBase();
-    uint32_t sec_hdr_tbl_num = relo.base.get_sec_num();
+    uint32_t sec_hdr_tbl_base = relo.getSecHdrBase();
+    uint32_t sec_hdr_tbl_num = relo.get_sec_num();
     Elf32_Shdr sec_hdr_tbl[sec_hdr_tbl_num];
+    
+    //read the section header table
+    in.read((char*)sec_hdr_tbl, sec_hdr_tbl_num*sizeof(Elf32_Shdr));
+
+    relo.strtbl = Strtbl(STRTBL);
+    relo.shstrtbl = Strtbl(SHSTRTBL);
 
     //get section string table
-    in >> relo.shstrtbl;
-    //sec_list["shstrtab"] = shstrtbl;
-
-    in.read((char*)sec_hdr_tbl, sec_hdr_tbl_num*sizeof(Elf32_Shdr));
+    in.seekg(sec_hdr_tbl[relo.getShStrTblNdx()].sh_offset);
+    relo.shstrtbl.read(in, sec_hdr_tbl[relo.getShStrTblNdx()].sh_size);
 
     for(int i=0;i<sec_hdr_tbl_base;++i){
         Elf32_Shdr hdr = sec_hdr_tbl[i];
-        
-        strtbl stringtbl(base,STRTBL);
-        strtbl shstrtbl(base,SHSTRTBL);
-        Symtab symtab(_elfbase);
+        std::string name = relo.shstrtbl.getName(hdr.sh_name);
+
+        in.seekg(hdr.sh_offset);
 
         //get string table
-        if(hdr.sh_type == SHT_STRTAB && i!= _elfbase.getShStrTblNdx()){
-            stringtbl.setNdx(i);
-            in >> stringtbl;
-            sec_list["strtab"] = stringtbl;
+        if(hdr.sh_type == SHT_STRTAB && i!= relo.getShStrTblNdx()){
+            relo.shstrtbl.read(in, hdr.sh_size);
         }
 
         //get symbol table
-        if(hdr.sh_type == SHT_SYMTAB){
-            symtab.setNdx(i)
-            in >> symtab;
-            sec_list["symtab"] = symtab;
+        else if(hdr.sh_type == SHT_SYMTAB){
+            relo.symtbl.read(in, hdr.sh_size);
         }
 
-        if(hdr.sh_type == SHT_RELA){
-            ReloSection relo(_elfbase);
-            //get the name
-            std::string name = shstrtbl.getName(hdr.sh_name);
-            relo.setNdx(i);
-            in >> relo;
+        else if(hdr.sh_type == SHT_RELA){
+            std::string name = relo.shstrtbl.getName(hdr.sh_name);
+            Relotab relo(name);
+            relo.read(in, hdr.sh_size);
+            relotab_list.insert(std::unordered_map<std::string,Relotab>::value_type(name,relo));
         }
+    }
+
+    for(int i=0;i<sec_hdr_tbl_base;++i){
+
+        Elf32_Shdr hdr = sec_hdr_tbl[i];
+        //get the name
+        std::string name = relo.shstrtbl.getName(hdr.sh_name);
+        //seek to the section content
+        in.seekg(hdr.sh_offset);
 
         //get other section
         if(hdr.sh_type == SHT_PROGBITS){
-            CustomizableSection cus_sec(_elfbase);
-            //get the name
-            std::string name = shstrtbl.getName(hdr.sh_name);
-            cus_sec.setNdx(i);
-            in >> cus_sec;
-
-            //rewrite all the symbol
-            std::vector<Symbol> sym_list = symtab.get_sec_Symbol(i);
-
-            for(Symbol& sym : sym_list){
-                std::vector<Rel<R_ARM_ABS32>> rel_list = relo.get_sec_Symbol(sym);
-                
-                for(Rel<R_ARM_ABS32> rel:rel_list){
-                    sym.bind(rel);
-                }
-            }
+            CustomizableSection cus_sec(name);
             
-        }
+            //if the custom section own a relocatable section
+            cus_sec.read(in, hdr.sh_size);
 
+            if(relotab_list.find(".rel"+name) != relotab_list.end())
+                //rewrite all the symbol and their binding relocatable entry
+                get_section_symbol(cus_sec,i,relo.symtbl,relo.strtbl,relotab_list[".rel"+name]);
+        }
     }
 }
-    //the section header table
-    class SectionHdrTbl :public Sequence{
-    
-    private:
-        elf& _elfbase;
-        
 
-    public:
-        SectionHdrTbl(elf& elfbase):_elfbase(elfbase){ }
+inline void get_section_symbol(CustomizableSection& sec,uint32_t ndx,Symtab symtab,Strtbl strtbl,Relotab relotab){
 
-        void construct(std::ifstream& in){
+    std::istream in(&symtab.buffer());
+    size_t sym_num = symtab.size()/sizeof(Elf32_Sym);
+    Elf32_Sym symhdr[sym_num];
+    in.read((char*)symhdr,symtab.size());
 
-            
+    for(int symbol_idx=0;symbol_idx<sym_num;++symbol_idx){
+        if(symhdr[symbol_idx].st_shndx == ndx){
 
+            //look for name
+            std::string name = strtbl.getName(symhdr[symbol_idx].st_name);
+            Symbol* sym = new Symbol(name,symhdr[symbol_idx].st_info);
+            sym->set_offset(symhdr[symbol_idx].st_value);
+            sec.symbol_set.push_back(std::shared_ptr<Symbol>(sym));
+
+            //construct the relo units
+            std::vector<std::shared_ptr<Rel<R_ARM_ABS32>>>rel_list;
+            std::istream in(&relotab.buffer());
+            size_t relo_num = relotab.size()/sizeof(Elf32_Rel);
+            Elf32_Rel rel_tbl[relo_num];
+            in.read((char*)rel_tbl,relotab.size());
+
+            for(int relo_idx=0;relo_idx<relo_num;++relo_idx){
+
+                if((rel_tbl[relo_idx].r_info)>>8 == symbol_idx){
+                    std::shared_ptr<Rel<R_ARM_ABS32>> rel_item = std::shared_ptr<Rel<R_ARM_ABS32>>(new Rel<R_ARM_ABS32>);
+                    rel_item->set_offset(rel_tbl[relo_idx].r_offset);
+                    rel_item->set_base(sec.pos());
+
+                    //binding the relo entry to the symbol
+                    sym->bind(rel_item);
+
+                    //add to relocatable list
+                    sec.relo_abs_list.push_back(rel_item);
+                }
+            }
         }
-    };
-
+    }
+}
