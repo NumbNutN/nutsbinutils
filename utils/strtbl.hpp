@@ -36,8 +36,8 @@ public:
         std::istream in(&buffer());
         in.seekg(index, std::ios::beg);
         
-        char tmp[1024];
-        in.get(tmp, 1024, '\0');
+        char tmp[64];
+        in.get(tmp, 64, '\0');
         std::string str(tmp);
         return str;
     }

@@ -32,7 +32,7 @@ public:
     uint32_t insert(Symbol& sym,Elf32_Word symName,uint8_t secInc){
         Elf32_Sym symhdr = {
             .st_name = symName,
-            .st_value = sym.pos(),
+            .st_value = (uint32_t)sym.get_offset(),
             .st_size = sym.size(),
             .st_info = sym._type,
             .st_shndx = secInc

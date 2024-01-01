@@ -21,7 +21,7 @@ public:
     Elf32_Addr _addr;
     Elf32_Word _flags;
 
-    std::vector<std::shared_ptr<CustomizableSection>> cus_sec_list;
+    std::vector<CustomizableSection> cus_sec_list;
 public:
 
     Segment(Elf32_Word type, Elf32_Addr vaddr, Elf32_Word flags)
@@ -29,9 +29,9 @@ public:
 
     // segment(segment& seg) = default;
 
-    void insert(std::shared_ptr<CustomizableSection>& sec){
+    void insert(CustomizableSection& sec){
         cus_sec_list.push_back(sec);
-        *this << (Sequence&)*sec;
+        *this << (Sequence&)cus_sec_list.back();
     }
 
     Elf32_Phdr getHeader() const{
@@ -48,8 +48,8 @@ public:
     }
 
     void refreshAll(){
-        for(auto pcus_sec: cus_sec_list){
-            refresh(*pcus_sec);
+        for(auto custom_sec: cus_sec_list){
+            refresh(custom_sec);
         }
     }
 

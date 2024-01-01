@@ -47,6 +47,8 @@ public:
         if(in.gcount() != size)throw std::exception();
         std::ostream out(&_buf);
         out.write(tmp, size);
+        //remember to set the size
+        _size = size;
     }
 
     template <typename T>

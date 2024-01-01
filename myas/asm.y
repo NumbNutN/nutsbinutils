@@ -151,7 +151,7 @@ CUSTOM_SECTION
     | CUSTOM_SECTION INCOMPLETE_INSTRUCTION          {
         //if a imcomplete instruction could be filled in a single file
         //it should change to a complete instruction before insert into relocable file
-        $1->insert(*$2,curSymbol);
+        $1->insert($2,curSymbol);
         $$ = $1;
     }
 

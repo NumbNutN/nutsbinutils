@@ -32,8 +32,8 @@ public:
         segment_hdr_tbl << seg2.getHeader();
 
         //refresh the section (all relo rewrite to section)
-        for(auto psec:seg2.cus_sec_list){
-            psec->refreshAll();
+        for(auto sec:seg2.cus_sec_list){
+            sec.refreshAll();
         }
         //refresh the seg (all section rewrite to segment)
         seg2.refreshAll();
@@ -45,11 +45,12 @@ public:
         //for each section in a segment
         //refresh their relocatable entry
 
-        //write the segment header table
-        *this << segment_hdr_tbl;
-
         //arange for program header table
         _ehdr.e_phoff = get_cur_offset();
+
+        //write the segment header table
+        *this << segment_hdr_tbl;
+        
         //write the elf header
         std::ostream output(&buffer());
         output.seekp(0x0, std::ios::beg);
@@ -58,9 +59,9 @@ public:
     }
 
     void setEntry(){
-        for(auto pseg : segmentUnitList){
-            for(auto psec: pseg.cus_sec_list){
-                for(auto sym:psec->symbol_set){
+        for(auto seg : segmentUnitList){
+            for(auto sec: seg.cus_sec_list){
+                for(auto sym:sec.symbol_set){
                     if(sym->_name == "_start"){
                         _ehdr.e_entry = sym->pos();
                     }

@@ -40,8 +40,6 @@ protected:
         _poff = MOD(sizeof(Elf32_Ehdr),5)?ROUND(sizeof(Elf32_Ehdr),5)+(1<<5):sizeof(Elf32_Ehdr);
         _size = _poff;
     }
-
-    friend std::ofstream &operator<<(std::ofstream& output,elf &elf_struct);
     friend std::ifstream &operator>>(std::ifstream& input,elf& elfobj);
 
 public:
@@ -68,17 +66,6 @@ public:
         return _ehdr.e_entry;
     }
 };
-
-
-inline std::ofstream &operator<<(std::ofstream& output,elf &elf_struct){
-
-    //write elf header
-    output.seekp(0x0, std::ios::beg);
-    output.write(reinterpret_cast<const char*>(&elf_struct._ehdr), sizeof(Elf32_Ehdr));
-    //flush the content so we see the content at once it put into the output stream
-    output.flush();
-    return output;
-}
 
 inline std::ifstream &operator>>(std::ifstream& input,elf& elfobj){
 

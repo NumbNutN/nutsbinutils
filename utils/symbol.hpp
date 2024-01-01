@@ -17,8 +17,8 @@ private:
             rel->relocate(pos());
         }
 
-        for(Rel<R_ARM_REL32>& rel:rel_binding_table){
-            rel.relocate((int32_t)pos());
+        for(std::shared_ptr<Rel<R_ARM_REL32>>& rel:rel_binding_table){
+            rel->relocate((int32_t)pos());
         }
     }
 public:
@@ -38,17 +38,17 @@ public:
     unsigned char _type;
     //Record offsets that require repositioning
     std::vector<std::shared_ptr<Rel<R_ARM_ABS32>>>abs_binding_table;
-    std::vector<Rel<R_ARM_REL32>>rel_binding_table;
+    std::vector<std::shared_ptr<Rel<R_ARM_REL32>>>rel_binding_table;
     Symbol(const std::string& name,unsigned char type = STB_LOCAL):_name(name),_type(type){
         set_base(0);
-    }
+    }  
 
     void bind(const std::shared_ptr<Rel<R_ARM_ABS32>>& rel){
         abs_binding_table.push_back(rel);
         _update();
     }
     
-    void bind(const Rel<R_ARM_REL32>& rel){
+    void bind(const std::shared_ptr<Rel<R_ARM_REL32>>& rel){
         rel_binding_table.push_back(rel);
         _update();
     }

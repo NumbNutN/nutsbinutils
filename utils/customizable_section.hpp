@@ -20,8 +20,8 @@ protected:
 
     //record <position,symbol used instruction>
     struct reloIns_type{
-        Instruction<INCOMPLETE_INS> ins;
         std::string sym;
+        std::shared_ptr<Instruction<INCOMPLETE_INS>> ins;
     };
 
     std::vector<reloIns_type> reloInsSet;
@@ -35,7 +35,7 @@ public:
 
     //relo entry list
     std::vector<std::shared_ptr<Rel<R_ARM_ABS32>>>relo_abs_list;
-    std::vector<Rel<R_ARM_REL32>>relo_rel_list;
+    std::vector<std::shared_ptr<Rel<R_ARM_REL32>>>relo_rel_list;
 
 public:
 // container interface
@@ -74,13 +74,13 @@ public:
  * call when analyse the assemble file
 */
 
-    void insert(Instruction<INCOMPLETE_INS>& ins,const std::string sym){
+    void insert(Instruction<INCOMPLETE_INS>* ins,const std::string sym){
 
         //add to the incomplete set
-        ins.set_offset(size());
-        reloInsSet.push_back({ins,sym});
+        ins->set_offset(size());
+        reloInsSet.push_back({sym,std::shared_ptr<Instruction<INCOMPLETE_INS>>(ins)});
         //write the encode to buffer
-        (Container<0>&)*this << (Sequence&)ins;
+        (Container<0>&)*this << (Sequence&)*ins;
         std::cout << buffer();
     }
 
@@ -102,6 +102,7 @@ public:
     //insert a symbol
     void insert(Symbol* sym){
         symbol_set.push_back(std::shared_ptr<Symbol>(sym));
+        (Container<0>&)*this << (Sequence&)*sym;
     }
 
     //insert a absolute address to literal pool
@@ -109,7 +110,7 @@ public:
 
     //insert into literal pool is a insert later method
     //it is certainly fixed when all the insert done
-    void insertLiteral(const Instruction<INCOMPLETE_INS>& ins,Symbol& sym){
+    void insertLiteral(const std::shared_ptr<Rel<R_ARM_REL32>>& ins,Symbol& sym){
         
         std::shared_ptr<Symbol> literal = std::shared_ptr<Symbol>(new Symbol("$"+sym._name,STB_LOCAL));
         
@@ -117,7 +118,7 @@ public:
         relo_rel_list.push_back(ins);
 
         // literal binding the instruction
-        literal->bind(relo_rel_list.back());
+        literal->bind(ins);
         literal->set_offset(size());
 
         // literal insert to symbol table
@@ -157,7 +158,7 @@ public:
             this->refresh(*relo);
         }
         for(auto relo:relo_rel_list){
-            this->refresh(relo);
+            this->refresh(*relo);
         }
     }
 
@@ -173,7 +174,7 @@ public:
             const std::string& name = unit.sym;
 
             //get the incomlete instruction
-            Instruction<INCOMPLETE_INS> incomplete_ins = unit.ins;
+            std::shared_ptr<Instruction<INCOMPLETE_INS>> incomplete_ins = unit.ins;
 
             //see if the symbol is existed in the same section
             for(std::shared_ptr<Symbol>& symbol: symbol_set){

@@ -12,6 +12,10 @@ class Rel : public Sequence{
 public:
     void relocate(uint32_t);
     void relocate(int32_t);
+
+    Rel() = default;
+
+    Rel(const Rel& rel) = delete;
 };
 
 template<>

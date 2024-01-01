@@ -40,7 +40,7 @@ private:
     uint32_t code;
 public:
 
-    Instruction(const Instruction& ins) = default;
+    Instruction(const Instruction& ins) = delete;
 
     /**
      * SVC index

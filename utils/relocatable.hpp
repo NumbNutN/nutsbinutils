@@ -17,9 +17,9 @@
 #include <string>
 #include <fstream>
 
-extern void get_section_symbol(const Section& sec,uint32_t ndx,Symtab symtab,Strtbl strtbl,Relotab relotab);
+extern void get_section_symbol(const Section& sec,uint32_t ndx,Symtab& symtab,Strtbl& strtbl,Relotab& relotab);
 
-inline void get_section_symbol(CustomizableSection& sec,uint32_t ndx,Symtab symtab,Strtbl strtbl,Relotab relotab){
+inline void get_section_symbol(CustomizableSection& sec,uint32_t ndx,Symtab& symtab,Strtbl& strtbl,Relotab& relotab){
 
     std::istream in(&symtab.buffer());
     size_t sym_num = symtab.size()/sizeof(Elf32_Sym);
@@ -227,9 +227,6 @@ inline Relocatable& operator<<(Relocatable& relo,Section& seq){
 
 inline std::ofstream &operator<<(std::ofstream& output,Relocatable &relo){
 
-    //first output elf header
-    // output << (elf&)relo;
-
     //output the relo
     (std::ostream&)output << relo;
 
@@ -264,7 +261,7 @@ inline std::ifstream &operator>>(std::ifstream& in,Relocatable &relo){
 
         //get string table
         if(hdr.sh_type == SHT_STRTAB && i!= relo.getShStrTblNdx()){
-            relo.shstrtbl.read(in, hdr.sh_size);
+            relo.strtbl.read(in, hdr.sh_size);
         }
 
         //get symbol table
