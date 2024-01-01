@@ -151,6 +151,16 @@ public:
         }
     }
 
+    void refreshAll(){
+        //now write all the relocatable entry
+        for(auto relo:relo_abs_list){
+            this->refresh(*relo);
+        }
+        for(auto relo:relo_rel_list){
+            this->refresh(relo);
+        }
+    }
+
     //if symbol is defined and used within one section
     //it can be identified
     void incompleteIdentified(){
@@ -184,14 +194,7 @@ public:
         //merge literal pool and basic symbol table
         symbol_set.insert(symbol_set.end(), literal_symbol_set.begin(), literal_symbol_set.end());
 
-
-        //now write all the relocatable entry
-        for(auto relo:relo_abs_list){
-            this->refresh(*relo);
-        }
-        for(auto relo:relo_rel_list){
-            this->refresh(relo);
-        }
+        refreshAll();
     }
 
     

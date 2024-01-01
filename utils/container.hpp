@@ -51,11 +51,17 @@ protected:
     uint32_t get_cur_offset(){
         return _poff;
     }
-
+public:
     void refresh(Sequence& seq){
         std::ostream out(&buffer());
         out.seekp(seq.get_offset());
         out << seq;
+    }
+
+    void refreshAll(){
+        for(Sequence* pseq:_seq_maintain_list){
+            refresh(*pseq);
+        }
     }
 
     template <uint32_t align2>
@@ -69,6 +75,8 @@ inline Container<align>& operator<<(Container<align>& ctn,Sequence& seq){
     seq.set_offset(off);
     seq.set_base(ctn.pos());
 
+    //refresh the current sequence before insert
+    // ctn.refresh(seq);
     std::ostream out(&ctn._buf);
     out.seekp(off);
     out << seq;

@@ -25,7 +25,7 @@ public:
         _base = new_base;
     }
 
-    virtual uint32_t size(){
+    virtual uint32_t size() const{
         return _size;
     }
 

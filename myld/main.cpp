@@ -36,7 +36,7 @@ int main(int argc,char* argv[]){
     out.open(outputPath,std::ios::out | std::ios::binary);
 
     //create a excutable file object
-    Executable exec_obj(size2shift(sysconf(_SC_PAGE_SIZE)));
+    Executable exec_obj;
 
     std::vector<Relocatable> reloVec;
     //read all the allocable file
@@ -53,53 +53,45 @@ int main(int argc,char* argv[]){
     }
 
     // <flags,vector<section>> 
-    std::unordered_map<Elf32_Word, std::vector<Section>> map = {
-        {SHF_ALLOC,std::vector<Section>()},
-        {SHF_ALLOC | SHF_WRITE,std::vector<Section>()},
-        {SHF_ALLOC | SHF_EXECINSTR,std::vector<Section>()},
-        {SHF_ALLOC | SHF_WRITE | SHF_EXECINSTR,std::vector<Section>()}
+    std::unordered_map<Elf32_Word, std::vector<std::shared_ptr<Section>>> map = {
+        {SHF_ALLOC,std::vector<std::shared_ptr<Section>>()},
+        {SHF_ALLOC | SHF_WRITE,std::vector<std::shared_ptr<Section>>()},
+        {SHF_ALLOC | SHF_EXECINSTR,std::vector<std::shared_ptr<Section>>()},
+        {SHF_ALLOC | SHF_WRITE | SHF_EXECINSTR,std::vector<std::shared_ptr<Section>>()}
     };
+
+    std::vector<std::shared_ptr<CustomizableSection>> custom_sec_list;
 
     uint32_t pos;
     //set the entry if see the _start
-    for(Relocatable& relo:reloVec){
-        //if a global symbol name "_start" here
-        if ((pos = relo.getSymbolPos("_start")) != -1){
-            exec_obj.entry() = pos;
-        }
-    }
+    // for(Relocatable& relo:reloVec){
+    //     //if a global symbol name "_start" here
+    //     if ((pos = relo.getSymbolPos("_start")) != -1){
+    //         exec_obj.entry() = pos;
+    //     }
+    // }
 
     //analyse the section with same flags
     for(Relocatable& relo:reloVec){
-        for(Section& sec:relo.sectionUnitList){
-            if(sec.getHeader().sh_type == SHT_PROGBITS)
-                map.at(sec.flags()).push_back(sec);
+        for(CustomizableSection& sec:relo.cus_section_list){
+                custom_sec_list.push_back(std::shared_ptr<CustomizableSection>(&sec));
         }
     }
-
+    
+    //create a program header for section sets with this flag
+    Segment seg(PT_LOAD,0x0,PF_X|PF_R|PF_W);
     //combine the file
-    for(auto unit:map){
+    for(auto sec:custom_sec_list){
         
-        std::vector<Section>& section_list = unit.second;
-        Elf32_Word flags = secFlag2ProFlag(unit.first);
+        Elf32_Word flags = secFlag2ProFlag(sec->_flags);
         
-        //judge if there's section with that flag
-        if(section_list.empty())continue;
-
-        //create a program header for section sets with this flag
-        Segment seg(PT_LOAD,0x0,0x0,flags,size2shift(sysconf(_SC_PAGE_SIZE)));
-
         //insert all the section content to segment
-        for(Section& sec:section_list){
-            seg.insert(sec);
-        }
-
-        exec_obj.insert(seg);
-        
+        seg.insert(sec);
     }
+    exec_obj.insert(seg);
 
     //arange the executable file
-    exec_obj.arange();
+    exec_obj.organize();
     
     //write the executable file
     out << exec_obj;

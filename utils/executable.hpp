@@ -10,58 +10,63 @@ class Executable : public elf{
 
 private:
 
-    uint32_t _palign;
-    elf& base = (elf&)*this;
+    Sequence segment_hdr_tbl;
     std::vector<Segment> segmentUnitList; /* segement header table */
 
 public:
 
-    Executable(uint32_t align) :elf(ET_EXEC),_palign(align){}
+    Executable() :elf(ET_EXEC){}
 
     void insert(Segment& seg){
-
-        //select a new offset
-        uint32_t off = allocoffset(seg.size(),_palign);
-        seg.set_offset(off);
 
         //push to program table
         segmentUnitList.push_back(seg);
 
-        //add segment to container management
-        Container::insert(segmentUnitList.back());
-
         //add segment number
         _ehdr.e_phnum += 1;
 
+        (Container<ELF_ALIGN>&)*this << (Sequence&)segmentUnitList.back();
+        
+        Segment& seg2 = segmentUnitList.back();
+
+        segment_hdr_tbl << seg2.getHeader();
+
+        //refresh the section (all relo rewrite to section)
+        for(auto psec:seg2.cus_sec_list){
+            psec->refreshAll();
+        }
+        //refresh the seg (all section rewrite to segment)
+        seg2.refreshAll();
+        
+    }
+
+    void organize(){
+
+        //for each section in a segment
+        //refresh their relocatable entry
+
+        //write the segment header table
+        *this << segment_hdr_tbl;
+
         //arange for program header table
-        _ehdr.e_phoff = getcuroffset();
+        _ehdr.e_phoff = get_cur_offset();
+        //write the elf header
+        std::ostream output(&buffer());
+        output.seekp(0x0, std::ios::beg);
+        output.write(reinterpret_cast<const char*>(&_ehdr), sizeof(Elf32_Ehdr));
+        std::cout << (*this).buffer();
     }
 
-    void setEntry(Elf32_Word entry){
-        _ehdr.e_entry = entry;
+    void setEntry(){
+        for(auto pseg : segmentUnitList){
+            for(auto psec: pseg.cus_sec_list){
+                for(auto sym:psec->symbol_set){
+                    if(sym->_name == "_start"){
+                        _ehdr.e_entry = sym->pos();
+                    }
+                }
+            }
+        }
     }
-
-    friend std::ostream &operator<<(std::ostream& output,Executable& exec);
 
 };
-
-inline std::ostream &operator<<(std::ostream& output,Executable& exec){
-
-    output << exec.base;
-    // write segment header table & segments
-
-    // write segment header table
-    output.seekp(exec._ehdr.e_phoff, std::ios::beg);
-    for(const Segment& seg:exec.segmentUnitList){
-        Elf32_Phdr phdr = seg.getHeader();
-        output.write(reinterpret_cast<const char*>(&phdr), sizeof(Elf32_Phdr));
-        output.flush();
-    }
-    //write each program
-    for(Segment& seg:exec.segmentUnitList){
-        output.seekp(seg.getHeader().p_offset,std::ios::beg);
-        output << seg;
-    }
-
-    return output;
-}

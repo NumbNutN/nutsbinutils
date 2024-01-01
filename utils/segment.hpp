@@ -5,10 +5,8 @@
 #include <vector>
 #include <unordered_map>
 
-#include "elf.hpp"
-#include "binbuf.hpp"
 #include "section.hpp"
-#include "symbol_table.hpp"
+#include "customizable_section.hpp"
 #include "container.hpp"
 
 #include "utils.h"
@@ -18,65 +16,41 @@
  */
 class Segment :public Container<SEGMENT_ALIGN>{
 
-private:
-  binbuf _buf;
-  Elf32_Phdr _phdr; /* segement header */
+public:
+    Elf32_Word _type;
+    Elf32_Addr _addr;
+    Elf32_Word _flags;
 
-protected:
-
-
+    std::vector<std::shared_ptr<CustomizableSection>> cus_sec_list;
 public:
 
-    void set_offset(int32_t new_offset){
-        _phdr.p_offset = new_offset;
-
-        Container::set_offset(new_offset);
-    }
-
-public:
-
-  Segment(Elf32_Word type, Elf32_Addr vaddr, Elf32_Addr paddr, Elf32_Word flags, Elf32_Word align)
-      : _phdr({.p_type = type,
-               .p_vaddr = vaddr,
-               .p_paddr = paddr,
-               .p_flags = flags, 
-               .p_align =  align}) {}
+    Segment(Elf32_Word type, Elf32_Addr vaddr, Elf32_Word flags)
+      : _type(type),_addr(vaddr),_flags(flags) {}
 
     // segment(segment& seg) = default;
 
-    const binbuf &buffer() {
-        std::ostream out(&_buf);
-        // buffer must be flush before return
-        // else it will get problem when copy
-        out.flush();
-        return _buf;
+    void insert(std::shared_ptr<CustomizableSection>& sec){
+        cus_sec_list.push_back(sec);
+        *this << (Sequence&)*sec;
     }
 
     Elf32_Phdr getHeader() const{
-        return _phdr;
+        return Elf32_Phdr{
+            .p_type = _type,
+            .p_offset = pos(),
+            .p_vaddr = _addr,
+            .p_paddr = _addr,
+            .p_filesz = size(),
+            .p_memsz = size(),
+            .p_flags = _flags,
+            .p_align = 1024,
+        };
     }
 
-    friend Segment& operator<<(Segment& ctn,Sequence& seq);
-    friend std::ofstream& operator<<(std::ofstream& out,Segment& seg);
+    void refreshAll(){
+        for(auto pcus_sec: cus_sec_list){
+            refresh(*pcus_sec);
+        }
+    }
+
 };
-
-//segment operator<< has no right to change the get area pointer
-inline std::ofstream& operator<<(std::ofstream& out,Segment& seg)
-{
-    std::istream in(&seg._buf);
-    //write as segment size says
-    char tmp[seg.getHeader().p_filesz];
-    in.read(tmp, seg.getHeader().p_filesz);
-    out.write(tmp, seg.getHeader().p_filesz);
-    //flush the content so we see the content at once it put into the output stream
-    out.flush();
-
-    return out;
-}
-
-inline Segment& operator<<(Segment& ctn,Sequence& seq){
-    (Container<3>&) ctn << seq;
-    ctn._phdr.p_filesz = ctn.size();
-    ctn._phdr.p_memsz = ctn.size();
-    return ctn;
-}
