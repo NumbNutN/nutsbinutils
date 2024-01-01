@@ -10,10 +10,8 @@
 
 class Symbol : public Rel<R_ARM_ABS32>{
 
-public:
-// sequence interface
-    virtual void set_base(uint32_t new_base) override{
-
+private:
+    void _update(){
         for(std::shared_ptr<Rel<R_ARM_ABS32>>& rel:abs_binding_table){
             // refill new address
             rel->relocate(pos());
@@ -22,6 +20,17 @@ public:
         for(Rel<R_ARM_REL32>& rel:rel_binding_table){
             rel.relocate((int32_t)pos());
         }
+    }
+public:
+// sequence interface
+    virtual void set_base(uint32_t new_base) override{
+        Sequence::set_base(new_base);
+        _update();
+    }
+
+    virtual void set_offset(int32_t new_offset) override{
+        Sequence::set_offset(new_offset);
+        _update();
     }
 
 public:
@@ -36,9 +45,11 @@ public:
 
     void bind(const std::shared_ptr<Rel<R_ARM_ABS32>>& rel){
         abs_binding_table.push_back(rel);
+        _update();
     }
     
     void bind(const Rel<R_ARM_REL32>& rel){
         rel_binding_table.push_back(rel);
+        _update();
     }
 };

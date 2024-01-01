@@ -52,6 +52,12 @@ protected:
         return _poff;
     }
 
+    void refresh(Sequence& seq){
+        std::ostream out(&buffer());
+        out.seekp(seq.get_offset());
+        out << seq;
+    }
+
     template <uint32_t align2>
     friend Container<align2>& operator<<(Container<align2>& seg,Sequence& sec);
 };

@@ -29,7 +29,7 @@ inline void Rel<R_ARM_REL32>::relocate(int32_t refer_pos){
     std::iostream stream(&buffer());
     uint32_t field;
     stream.read((char*)&field, sizeof(uint32_t));
-    field = field + refer_pos - pos();
+    field = 8 + refer_pos - pos();
     stream.seekp(0);
     stream.write((char*)&field, sizeof(uint32_t));
 }
