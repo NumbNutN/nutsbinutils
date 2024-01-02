@@ -96,7 +96,6 @@ public:
     template <directive_type type>
     void insert(Directive<type>& obj){
         (Container<0>&)*this << (Sequence&)obj;
-        std::cout << buffer();
     }
 
     //insert a symbol

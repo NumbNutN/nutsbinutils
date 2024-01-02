@@ -3,6 +3,8 @@
 
 #include "binbuf.hpp"
 
+#include <vector>
+
 class Sequence{
 
 protected:
@@ -58,7 +60,8 @@ public:
 
     friend std::ostream& operator<<(std::ostream&,Sequence&);
 
-    // friend std::istream& operator>>(std::istream& in,Sequence& seq);
+    template <typename T>
+    friend Sequence& operator<<(Sequence& seq,const std::vector<T> dat);
 };
 
 
@@ -77,6 +80,14 @@ inline Sequence& operator<<(Sequence& seq,const std::string& dat){
     char c = '\0';
     out.write(&c,sizeof(char));
     seq._size += dat.size() + 1;
+    return seq;
+}
+
+template <typename T>
+inline Sequence& operator<<(Sequence& seq,const std::vector<T> dat){
+    std::ostream out(&seq._buf);
+    out.write(&dat[0],dat.size());
+    seq._size += dat.size();
     return seq;
 }
 

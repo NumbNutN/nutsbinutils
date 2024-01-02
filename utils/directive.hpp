@@ -7,6 +7,7 @@
 
 #include <string>
 #include <iostream>
+#include <vector>
 
 enum directive_type{
     STRING,
@@ -39,8 +40,7 @@ inline Directive<WORD>::Directive(uint32_t dat){
 template <>
 inline Directive<ZERO>::Directive(uint32_t num){
     size_t size = num*sizeof(char);
-    char tmp[size];
-    memset(tmp,0,size);
+    std::vector<char> tmp(size,0);
     *this << tmp;
 }
 
@@ -51,7 +51,6 @@ inline Directive<ALIGN>::Directive(uint32_t align,uint32_t pos){
     //check the current pos
     uint32_t nextPos = MOD(pos,align)?(ROUND(pos,align)+(1<<align)):pos;
     size_t size = nextPos - pos;
-    char tmp[size];
-    memset(tmp,0,size);
+    std::vector<char> tmp(size,0);
     *this << tmp;
 }
