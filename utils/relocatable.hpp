@@ -60,7 +60,7 @@ inline void get_section_symbol(CustomizableSection& sec,uint32_t ndx,Symtab& sym
     }
 }
 
-class Relocatable : public elf{
+class Relocatable : public elf,public Container<4>{
 
 private:
 
@@ -94,7 +94,11 @@ public:
 
     Relocatable() : elf(ET_REL),
     strtbl(STRTBL),
-    shstrtbl(SHSTRTBL){}
+    shstrtbl(SHSTRTBL){
+        //the align requirement of architecture
+        _poff = MOD(sizeof(Elf32_Ehdr),5)?ROUND(sizeof(Elf32_Ehdr),5)+(1<<5):sizeof(Elf32_Ehdr);
+        _size = _poff;
+    }
 
 private:
 

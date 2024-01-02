@@ -10,7 +10,7 @@
 
 #include "Container.hpp"
 
-class elf : public Container<ELF_ALIGN>{
+class elf{
 
 protected:
     Elf32_Ehdr _ehdr;        /* ELF header */
@@ -36,9 +36,6 @@ protected:
             ELFMAG0,ELFMAG1,ELFMAG2,ELFMAG3,ELFCLASS32,ELFDATA2LSB,EV_CURRENT,ELFOSABI_SYSV,0
         };
         memcpy(_ehdr.e_ident,magic,sizeof(magic));
-            //the align requirement of architecture
-        _poff = MOD(sizeof(Elf32_Ehdr),5)?ROUND(sizeof(Elf32_Ehdr),5)+(1<<5):sizeof(Elf32_Ehdr);
-        _size = _poff;
     }
     friend std::ifstream &operator>>(std::ifstream& input,elf& elfobj);
 

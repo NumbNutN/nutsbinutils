@@ -6,7 +6,7 @@
 #include "elf.hpp"
 #include "segment.hpp"
 
-class Executable : public elf{
+class Executable : public elf, public Container<SEGMENT_ALIGN>{
 
 private:
 
@@ -15,7 +15,11 @@ private:
 
 public:
 
-    Executable() :elf(ET_EXEC){}
+    Executable() :elf(ET_EXEC){
+        //the align requirement of architecture
+        _poff = MOD(sizeof(Elf32_Ehdr),5)?ROUND(sizeof(Elf32_Ehdr),5)+(1<<5):sizeof(Elf32_Ehdr);
+        _size = _poff;        
+    }
 
     void insert(Segment& seg){
 
@@ -25,7 +29,9 @@ public:
         //add segment number
         _ehdr.e_phnum += 1;
 
-        (Container<ELF_ALIGN>&)*this << (Sequence&)segmentUnitList.back();
+        (Container<SEGMENT_ALIGN>&)*this << (Sequence&)segmentUnitList.back();
+        std::cout << ((Sequence&)segmentUnitList.back()).buffer();
+        std::cout << buffer();
         
         Segment& seg2 = segmentUnitList.back();
 
@@ -50,7 +56,7 @@ public:
 
         //write the segment header table
         *this << segment_hdr_tbl;
-        
+
         //write the elf header
         std::ostream output(&buffer());
         output.seekp(0x0, std::ios::beg);

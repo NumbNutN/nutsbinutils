@@ -18,7 +18,7 @@ class binbuf : public std::streambuf{
 
 private:
     size_t _size = 2;
-    size_t _maxSize = 4096;
+    size_t _maxSize = 4096*4;
     char_type* _buf;
     size_t underflowCnt = 0;
     size_t overflowCnt = 0;
