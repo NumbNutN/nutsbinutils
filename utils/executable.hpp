@@ -36,13 +36,6 @@ public:
         Segment& seg2 = segmentUnitList.back();
 
         segment_hdr_tbl << seg2.getHeader();
-
-        //refresh the section (all relo rewrite to section)
-        for(auto sec:seg2.cus_sec_list){
-            sec.refreshAll();
-        }
-        //refresh the seg (all section rewrite to segment)
-        seg2.refreshAll();
         
     }
 

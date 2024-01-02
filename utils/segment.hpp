@@ -47,10 +47,4 @@ public:
         };
     }
 
-    void refreshAll(){
-        for(auto custom_sec: cus_sec_list){
-            refresh(custom_sec);
-        }
-    }
-
 };

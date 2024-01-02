@@ -26,14 +26,19 @@ inline void Rel<R_ARM_ABS32>::relocate(uint32_t pos){
     field += pos;
     stream.seekp(0);
     stream.write((char*)&field, sizeof(uint32_t));
+    refresh();
 }
 
 template<>
 inline void Rel<R_ARM_REL32>::relocate(int32_t refer_pos){
     std::iostream stream(&buffer());
     uint32_t field;
-    stream.read((char*)&field, sizeof(uint32_t));
-    field = 8 + refer_pos - pos();
+    //TODO read will cause error data in buffer
+    //stream.read((char*)&field, sizeof(uint32_t));
+    field = -8 + refer_pos - pos();
+    std::cout << buffer();
     stream.seekp(0);
     stream.write((char*)&field, sizeof(uint32_t));
+    std::cout << buffer();
+    refresh();
 }

@@ -52,17 +52,6 @@ protected:
         return _poff;
     }
 public:
-    void refresh(Sequence& seq){
-        std::ostream out(&buffer());
-        out.seekp(seq.get_offset());
-        out << seq;
-    }
-
-    void refreshAll(){
-        for(Sequence* pseq:_seq_maintain_list){
-            refresh(*pseq);
-        }
-    }
 
     template <uint32_t align2>
     friend Container<align2>& operator<<(Container<align2>& seg,Sequence& sec);
@@ -71,6 +60,8 @@ public:
 template <uint32_t align>
 inline Container<align>& operator<<(Container<align>& ctn,Sequence& seq){
     ctn._seq_maintain_list.push_back(&seq);
+    seq._outer_ctn = &ctn;
+    
     uint32_t off = ctn.alloc_offset(seq.size());
     seq.set_offset(off);
     seq.set_base(ctn.pos());

@@ -15,6 +15,8 @@ protected:
     binbuf _buf;
 
 public:
+    Sequence* _outer_ctn = nullptr;
+
     uint32_t pos() const{
         return _base + _offset;
     }
@@ -51,6 +53,20 @@ public:
         out.write(tmp, size);
         //remember to set the size
         _size = size;
+    }
+
+    void refresh(){
+        if(_outer_ctn == nullptr)return;
+        std::ostream out(&_outer_ctn->buffer());
+        out.seekp(_offset);
+
+        //as before refresh,the get pointer has reach the end. so we should seekg
+        std::istream this_buffer(&buffer());
+        this_buffer.seekg(0);
+        std::cout << _outer_ctn->buffer();
+        out << *this;
+        std::cout << _outer_ctn->buffer();
+        ((Sequence*)_outer_ctn)->refresh();
     }
 
     template <typename T>
@@ -96,6 +112,7 @@ inline std::ostream& operator<<(std::ostream& out,Sequence& seq)
     std::istream in(&seq._buf);
     char tmp[seq.size()];
     in.read(tmp,seq.size());
+    size_t n = in.gcount();
     out.write(tmp, seq.size());
     out.flush();
     return out;
