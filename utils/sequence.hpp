@@ -63,6 +63,7 @@ public:
         //as before refresh,the get pointer has reach the end. so we should seekg
         std::istream this_buffer(&buffer());
         this_buffer.seekg(0);
+        std::cout << buffer();
         std::cout << _outer_ctn->buffer();
         out << *this;
         std::cout << _outer_ctn->buffer();

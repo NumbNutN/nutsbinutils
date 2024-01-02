@@ -59,18 +59,22 @@ public:
 
 template <uint32_t align>
 inline Container<align>& operator<<(Container<align>& ctn,Sequence& seq){
-    ctn._seq_maintain_list.push_back(&seq);
-    seq._outer_ctn = &ctn;
     
     uint32_t off = ctn.alloc_offset(seq.size());
     seq.set_offset(off);
     seq.set_base(ctn.pos());
 
-    //refresh the current sequence before insert
-    // ctn.refresh(seq);
+    //TODO what if insert into list before set offset
+    //set offset for sequence before insert to reduce the update times
+    ctn._seq_maintain_list.push_back(&seq);
+    seq._outer_ctn = &ctn;
+
+    std::cout << seq.buffer();
+    std::cout << ctn.buffer();
     std::ostream out(&ctn._buf);
     out.seekp(off);
     out << seq;
+    std::cout << ctn.buffer();
 
     return ctn;
 }

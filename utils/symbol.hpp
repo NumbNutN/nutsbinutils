@@ -45,11 +45,11 @@ public:
 
     void bind(const std::shared_ptr<Rel<R_ARM_ABS32>>& rel){
         abs_binding_table.push_back(rel);
-        _update();
+        rel->relocate(pos());
     }
     
     void bind(const std::shared_ptr<Rel<R_ARM_REL32>>& rel){
         rel_binding_table.push_back(rel);
-        _update();
+        rel->relocate((int32_t)pos());
     }
 };

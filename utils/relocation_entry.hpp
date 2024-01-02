@@ -32,13 +32,16 @@ inline void Rel<R_ARM_ABS32>::relocate(uint32_t pos){
 template<>
 inline void Rel<R_ARM_REL32>::relocate(int32_t refer_pos){
     std::iostream stream(&buffer());
-    uint32_t field;
+    uint16_t field = 0;
     //TODO read will cause error data in buffer
-    //stream.read((char*)&field, sizeof(uint32_t));
-    field = -8 + refer_pos - pos();
-    std::cout << buffer();
+
+    //as we could only write 2 bytes but not 12 bits
+    //we should get 2 bytes
+    stream.seekg(0);
+    stream.read((char*)&field, sizeof(uint16_t));
+    field &= ~0xFFF;
+    field |= ((-8 + refer_pos - pos()) & 0xFFF);
     stream.seekp(0);
-    stream.write((char*)&field, sizeof(uint32_t));
-    std::cout << buffer();
+    stream.write((char*)&field, sizeof(uint16_t));
     refresh();
 }
