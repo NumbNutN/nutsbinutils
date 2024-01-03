@@ -53,6 +53,15 @@ protected:
     }
 public:
 
+    // an insert method will only insert the sequence within the container will the sequence's offset
+    void insert(Sequence& seq){
+        _seq_maintain_list.push_back(&seq);
+        seq._outer_ctn = this;
+        std::ostream out(&_buf);
+        out.seekp(seq.get_offset());
+        out << seq;
+    }
+
     template <uint32_t align2>
     friend Container<align2>& operator<<(Container<align2>& seg,Sequence& sec);
 };
@@ -69,11 +78,7 @@ inline Container<align>& operator<<(Container<align>& ctn,Sequence& seq){
     ctn._seq_maintain_list.push_back(&seq);
     seq._outer_ctn = &ctn;
 
-    std::cout << seq.buffer();
-    std::cout << ctn.buffer();
-    std::ostream out(&ctn._buf);
-    out.seekp(off);
-    out << seq;
+    ctn.insert(seq);
     std::cout << ctn.buffer();
 
     return ctn;

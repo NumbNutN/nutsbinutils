@@ -60,13 +60,13 @@ public:
         std::ostream out(&_outer_ctn->buffer());
         out.seekp(_offset);
 
-        //as before refresh,the get pointer has reach the end. so we should seekg
+        //so see if a refresh to the outer container will extend the container's size
+        if(_offset + _size > _outer_ctn->_size)_outer_ctn->_size = _offset + _size;
+
         std::istream this_buffer(&buffer());
+        //as before refresh,the get pointer has reach the end. so we should seekg
         this_buffer.seekg(0);
-        std::cout << buffer();
-        std::cout << _outer_ctn->buffer();
         out << *this;
-        std::cout << _outer_ctn->buffer();
         ((Sequence*)_outer_ctn)->refresh();
     }
 

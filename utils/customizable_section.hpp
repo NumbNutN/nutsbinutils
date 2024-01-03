@@ -118,7 +118,8 @@ public:
 
         // literal binding the instruction
         literal->bind(ins);
-        literal->set_offset(size());
+        // literal->set_offset(size());
+        (Container&)*this << (Sequence&)*literal;
 
         // literal insert to symbol table
         literal_symbol_set.push_back(literal);
@@ -127,7 +128,7 @@ public:
         relo_abs_list.push_back(std::dynamic_pointer_cast<Rel<R_ARM_ABS32>>(literal));
         
         // symbol binding the literal
-        sym.bind(relo_abs_list.back());
+        sym.bind(literal);
 
     }
 

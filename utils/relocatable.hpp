@@ -56,6 +56,9 @@ inline void get_section_symbol(CustomizableSection& sec,uint32_t ndx,Symtab& sym
 
                     //add to relocatable list
                     sec.relo_abs_list.push_back(rel_item);
+
+                    //add the relo entry to the custom section maintain list
+                    ((Container<0>&)sec).insert((Sequence&)*rel_item);
                 }
             }
         }

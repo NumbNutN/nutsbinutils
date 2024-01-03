@@ -20,12 +20,14 @@ public:
 
 template<>
 inline void Rel<R_ARM_ABS32>::relocate(uint32_t pos){
-    std::iostream stream(&buffer());
+      std::iostream stream(&buffer());
     uint32_t field;
-    stream.read((char*)&field, sizeof(uint32_t));
-    field += pos;
+    //read is failed
+    //stream.read((char*)&field, sizeof(uint32_t));
+    field = pos;
     stream.seekp(0);
     stream.write((char*)&field, sizeof(uint32_t));
+    _size = 4;
     refresh();
 }
 
