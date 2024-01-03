@@ -38,18 +38,18 @@ int main(int argc,char* argv[]){
     //create a excutable file object
     Executable exec_obj;
 
-    std::vector<Relocatable> reloVec;
+    std::vector<Relocatable> relocatable_list;
     //read all the allocable file
     for(int i = 2;i < argc;i++){
         char* ptr = argv[i];
         //read all the relocable files
         std::ifstream fin;
         fin.open(ptr,std::ios::in | std::ios::binary);
-
-        Relocatable frelo;
-        fin >> frelo;
         //push to relocable files vector
-        reloVec.push_back(frelo);
+        relocatable_list.push_back(Relocatable());
+        //binding the dymanic member like symbol and incomplete instruction
+        //so the relocatable object should not copy
+        fin >> relocatable_list.back();
     }
 
     // <flags,vector<section>> 
@@ -60,7 +60,7 @@ int main(int argc,char* argv[]){
         {SHF_ALLOC | SHF_WRITE | SHF_EXECINSTR,std::vector<std::shared_ptr<Section>>()}
     };
 
-    std::vector<CustomizableSection> custom_sec_list;
+    std::vector<CustomizableSection*> custom_sec_list;
 
     uint32_t pos;
     //set the entry if see the _start
@@ -72,9 +72,9 @@ int main(int argc,char* argv[]){
     // }
 
     //analyse the section with same flags
-    for(Relocatable& relo:reloVec){
+    for(Relocatable& relo:relocatable_list){
         for(CustomizableSection& sec:relo.cus_section_list){
-                custom_sec_list.push_back(sec);
+            custom_sec_list.push_back(&sec);
         }
     }
     
@@ -83,10 +83,10 @@ int main(int argc,char* argv[]){
     //combine the file
     for(auto sec:custom_sec_list){
         
-        Elf32_Word flags = secFlag2ProFlag(sec._flags);
+        Elf32_Word flags = secFlag2ProFlag(sec->_flags);
         
         //insert all the section content to segment
-        seg.insert(sec);
+        seg.insert(*sec);
     }
     exec_obj.insert(seg);
 
@@ -98,6 +98,5 @@ int main(int argc,char* argv[]){
     std::cout << exec_obj.buffer();
     out << exec_obj;
     out.flush();
-    out.tellp();
     out.close();
 }

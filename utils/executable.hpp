@@ -12,7 +12,6 @@ private:
 
     Sequence segment_hdr_tbl;
     std::vector<Segment> segmentUnitList; /* segement header table */
-
 public:
 
     Executable() :elf(ET_EXEC){
@@ -29,13 +28,12 @@ public:
         //add segment number
         _ehdr.e_phnum += 1;
 
-        (Container<SEGMENT_ALIGN>&)*this << (Sequence&)segmentUnitList.back();
-        std::cout << ((Sequence&)segmentUnitList.back()).buffer();
-        std::cout << buffer();
-        
-        Segment& seg2 = segmentUnitList.back();
+        (Container<SEGMENT_ALIGN>&)*this << (Sequence&)seg;
+        // std::cout << ((Sequence&)segmentUnitList.back()).buffer();
+        // std::cout << buffer();
+        // Segment& seg2 = segmentUnitList.back();
 
-        segment_hdr_tbl << seg2.getHeader();
+        segment_hdr_tbl << seg.getHeader();
         
     }
 

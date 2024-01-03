@@ -31,7 +31,7 @@ public:
 
     void insert(CustomizableSection& sec){
         cus_sec_list.push_back(sec);
-        *this << (Sequence&)cus_sec_list.back();
+        *this << (Sequence&)sec;
     }
 
     Elf32_Phdr getHeader() const{

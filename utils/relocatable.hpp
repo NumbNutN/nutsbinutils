@@ -16,6 +16,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <memory>
 
 extern void get_section_symbol(const Section& sec,uint32_t ndx,Symtab& symtab,Strtbl& strtbl,Relotab& relotab);
 
@@ -31,6 +32,7 @@ inline void get_section_symbol(CustomizableSection& sec,uint32_t ndx,Symtab& sym
 
             //look for name
             std::string name = strtbl.getName(symhdr[symbol_idx].st_name);
+            //auto sym = std::make_unique<Symbol>(name,symhdr[symbol_idx].st_info)
             Symbol* sym = new Symbol(name,symhdr[symbol_idx].st_info);
             sym->set_offset(symhdr[symbol_idx].st_value);
             sec.symbol_set.push_back(std::shared_ptr<Symbol>(sym));
