@@ -8,3 +8,4 @@ compile_commands.json
 */parser.c
 */parser.h
 */*.elf
+平台部署和测试说明.md

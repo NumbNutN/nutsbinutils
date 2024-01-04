@@ -106,7 +106,7 @@ LDSCRIPT =
 LDFLAGS = $(LIBDIR)  -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all
-all: $(BUILD_DIR)/$(TARGET).elf
+all: $(BUILD_DIR)/$(TARGET)
 
 
 #######################################
@@ -132,7 +132,7 @@ $(BUILD_DIR)/%.o: %.cpp Makefile | $(BUILD_DIR)
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
 	$(AS) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile
+$(BUILD_DIR)/$(TARGET): $(OBJECTS) Makefile
 	$(CC) $(LIBS) $(OBJECTS) $(LDFLAGS) -o $@
 	$(SZ) $@
 	
