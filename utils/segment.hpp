@@ -38,8 +38,9 @@ public:
         return Elf32_Phdr{
             .p_type = _type,
             .p_offset = pos(),
-            .p_vaddr = _addr,
-            .p_paddr = _addr,
+            //TODO so far we consider the virtual address to be the position in file
+            .p_vaddr = pos(),
+            .p_paddr = pos(),
             .p_filesz = size(),
             .p_memsz = size(),
             .p_flags = _flags,
