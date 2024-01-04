@@ -66,10 +66,10 @@ extern char* curSymbol;
     Operand<Op2>* op2;
     Operand<Off>* off;
     
-    Directive<WORD>* directive_word;
-    Directive<ZERO>* directive_zero;
-    Directive<ALIGN>* directive_align;
-    Directive<STRING>* directive_string;
+    Directive<DIRECTIVE_TYPE_WORD>* directive_word;
+    Directive<DIRECTIVE_TYPE_ZERO>* directive_zero;
+    Directive<DIRECTIVE_TYPE_ALIGN>* directive_align;
+    Directive<DIRECTIVE_TYPE_STRING>* directive_string;
 
     //symbol
     Symbol* symbol;
@@ -94,7 +94,7 @@ extern char* curSymbol;
 
 %token <string_literal> STRING_LITERAL /* 字符串字面量 */
 
-%token <string_literal> SYMBOL_NAME      /* 符号 */
+%token <string_literal> STRING      /* 符号 */
 
 //directives
 %token <nullptr> DIRECTIVE_WORD_NAME
@@ -164,9 +164,9 @@ CUSTOM_SECTION
     | CUSTOM_SECTION GLOBAL_SYMBOL                   {$1->insert($2);$$ = $1;}
 
     // a section without explict statement ".section" is not allow
-    | DIRECTIVE_SECTION_NAME                          {
+    | DIRECTIVE_SECTION_NAME   STRING                {
         //create a instruction set object
-        $$ = new CustomizableSection;
+        $$ = new CustomizableSection($2);
         curInstructionSet = $$;
     }
 
@@ -212,7 +212,7 @@ INSTRUCTION
 
 INCOMPLETE_INSTRUCTION
     /* LDR REG, =LABEL */
-    : MNEMONIC RD ',' '=' SYMBOL_NAME                {
+    : MNEMONIC RD ',' '=' STRING                {
         //record the incomplete instruction need to be identified later
         Operand<Rn> pc(PC);
         $$ = new Instruction<INCOMPLETE_INS>(*$1,*$2,pc,Instruction<INCOMPLETE_INS>::PRE,Instruction<INCOMPLETE_INS>::NOWRITEBACK);
@@ -251,24 +251,24 @@ OFFSET
     | '#' IMMEDIATE {$$ = new Operand<Off>($2);}
 
 DIRECTIVE_WORD
-    : DIRECTIVE_WORD_NAME IMMEDIATE   {$$ = new Directive<WORD>($2);}
+    : DIRECTIVE_WORD_NAME IMMEDIATE   {$$ = new Directive<DIRECTIVE_TYPE_WORD>($2);}
 
 DIRECTIVE_ZERO
-    : DIRECTIVE_ZERO_NAME IMMEDIATE   {$$ = new Directive<ZERO>($2);}
+    : DIRECTIVE_ZERO_NAME IMMEDIATE   {$$ = new Directive<DIRECTIVE_TYPE_ZERO>($2);}
 
 DIRECTIVE_STRING
-    : DIRECTIVE_STRING_NAME STRING_LITERAL     {$$ = new Directive<STRING>(std::string($2));}
+    : DIRECTIVE_STRING_NAME STRING_LITERAL     {$$ = new Directive<DIRECTIVE_TYPE_STRING>(std::string($2));}
 
 DIRECTIVE_ALIGN
     : DIRECTIVE_ALIGN_NAME IMMEDIATE          {
         //get the current position
-        $$ = new Directive<ALIGN>($2,curInstructionSet->size());
+        $$ = new Directive<DIRECTIVE_TYPE_ALIGN>($2,curInstructionSet->size());
     }
 
 SYMBOL
-    : SYMBOL_NAME ':'    {$$ = new Symbol($1,STB_LOCAL);}
+    : STRING ':'    {$$ = new Symbol($1,STB_LOCAL);}
 
 GLOBAL_SYMBOL 
-    : DIRECTIVE_GLOBAL_NAME SYMBOL_NAME ':'     {$$ = new Symbol($2,STB_GLOBAL);}
+    : DIRECTIVE_GLOBAL_NAME STRING ':'     {$$ = new Symbol($2,STB_GLOBAL);}
 
 %%

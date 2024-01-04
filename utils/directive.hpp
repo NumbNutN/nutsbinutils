@@ -10,10 +10,10 @@
 #include <vector>
 
 enum directive_type{
-    STRING,
-    WORD,
-    ZERO,
-    ALIGN
+    DIRECTIVE_TYPE_STRING,
+    DIRECTIVE_TYPE_WORD,
+    DIRECTIVE_TYPE_ZERO,
+    DIRECTIVE_TYPE_ALIGN
 };
 
 template <directive_type type>
@@ -28,17 +28,17 @@ public:
 };
 
 template <>
-inline Directive<STRING>::Directive(std::string str){
+inline Directive<DIRECTIVE_TYPE_STRING>::Directive(std::string str){
     *this << str;
 }
 
 template <>
-inline Directive<WORD>::Directive(uint32_t dat){
+inline Directive<DIRECTIVE_TYPE_WORD>::Directive(uint32_t dat){
     *this << dat;
 }
 
 template <>
-inline Directive<ZERO>::Directive(uint32_t num){
+inline Directive<DIRECTIVE_TYPE_ZERO>::Directive(uint32_t num){
     size_t size = num*sizeof(char);
     std::vector<char> tmp(size,0);
     *this << tmp;
@@ -47,7 +47,7 @@ inline Directive<ZERO>::Directive(uint32_t num){
 //this's not a directive that focus on the memory organization with a partial view
 //so a current position from outside should be given
 template <>
-inline Directive<ALIGN>::Directive(uint32_t align,uint32_t pos){
+inline Directive<DIRECTIVE_TYPE_ALIGN>::Directive(uint32_t align,uint32_t pos){
     //check the current pos
     uint32_t nextPos = MOD(pos,align)?(ROUND(pos,align)+(1<<align)):pos;
     size_t size = nextPos - pos;

@@ -40,7 +40,7 @@ parser.c \
 scanner.c 
 
 CPP_SOURCES = \
-operand.cpp \
+../utils/operand.cpp \
 main.cpp 
 
 

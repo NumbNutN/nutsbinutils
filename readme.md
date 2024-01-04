@@ -77,7 +77,7 @@ LDR|STR Rd, [Rn], OFFSET{!}
 LDR Rd, =LABEL
 
 /* Supportive Directive */
-.section
+.section {STRING}
 	create a new section. (now the default section permission is alloctable & executable)
 	
 .zero {DIGIT}
