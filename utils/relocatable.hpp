@@ -180,6 +180,7 @@ inline Relocatable& operator<<(Relocatable& relo,CustomizableSection& sec){
     //add into buffer
     relo << (Section&)sec;
     std::cout << relo.buffer();
+    std::cout << sec.buffer();
     //add the customizable section into list
     relo.cus_section_list.push_back(sec);
 
