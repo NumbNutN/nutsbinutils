@@ -42,7 +42,7 @@ SetCondition "S"|"s"
 
 IMMEDIATE "-"?[0-9]+
 
-STRING_LITERAL \"[a-zA-Z_ ]+\"
+STRING_LITERAL \"[a-zA-Z0-9_ ]+\"
 STRING  [a-zA-Z0-9_.]+
 
 R0  [rR]0

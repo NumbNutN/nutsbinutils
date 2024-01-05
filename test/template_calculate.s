@@ -1,3 +1,4 @@
+;memory leaking, now cannot pass
 .section .text
 num:
 .word 2
@@ -17,7 +18,7 @@ calculate:
 print:
     MOV R0, #1
 	LDR R1, =str1
-	MOV R 2, #25
+	MOV R2, #25
 	MOV R7, #4
 	SVC 0
 

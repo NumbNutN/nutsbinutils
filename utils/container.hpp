@@ -79,7 +79,7 @@ inline Container<align>& operator<<(Container<align>& ctn,Sequence& seq){
     seq._outer_ctn = &ctn;
 
     ctn.insert(seq);
-    std::cout << ctn.buffer();
+    // std::cout << ctn.buffer();
 
     return ctn;
 }
